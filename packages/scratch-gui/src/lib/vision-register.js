@@ -5,7 +5,7 @@
  */
 export default function registerVisionExtensions (vm) {
     try {
-        // ✅ Rutas corregidas (sube 5 niveles desde scratch-gui/src/lib)
+        // ✅ Importación directa de las clases de extensión
         const modules = {
             visionactions: require('scratch-vm/src/extensions/vision-actions'),
             visionbasic: require('scratch-vm/src/extensions/vision-basic'),
@@ -13,22 +13,26 @@ export default function registerVisionExtensions (vm) {
             visionadvanced: require('scratch-vm/src/extensions/vision-advanced')
         };
 
-        Object.entries(modules).forEach(([id, factory]) => {
+        Object.entries(modules).forEach(([id, ExtensionClass]) => {
             try {
-                const extensionInstance = factory(vm.runtime);
+                // 🔧 Instancia real de la clase
+                const extensionInstance = new ExtensionClass(vm.runtime);
+
+                // 🧱 Registrar dentro del ExtensionManager de Scratch
                 vm.extensionManager._loadedExtensions[id] = extensionInstance;
 
-                const primitives = extensionInstance.getPrimitives();
+                // ⚡ Registrar sus primitivas (bloques)
+                const primitives = extensionInstance.getPrimitives ? extensionInstance.getPrimitives() : {};
+
                 Object.assign(vm.runtime._primitives, primitives);
 
-                console.log(`🧩 [VisionKit] Registrada extensión interna:
-                    ${id} (${Object.keys(primitives).length} bloques).`);
+                console.log(`🧩 [VisionKit] Extensión registrada: ${id} (${Object.keys(primitives).length} bloques).`);
             } catch (err) {
-                console.warn(`⚠️ [VisionKit] Error registrando extensión ${id}:`, err);
+                console.warn(`⚠️ [VisionKit] Error al registrar extensión ${id}:`, err);
             }
         });
 
-        console.log('✅ [VisionKit] Todas las extensiones Vision registradas manualmente.');
+        console.log('✅ [VisionKit] Todas las extensiones Vision registradas correctamente.');
     } catch (err) {
         console.error('❌ [VisionKit] Falló el registro manual de extensiones:', err);
     }

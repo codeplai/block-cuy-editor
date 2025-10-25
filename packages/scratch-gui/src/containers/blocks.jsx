@@ -77,7 +77,10 @@ class Blocks extends React.Component {
             'onWorkspaceUpdate',
             'onWorkspaceMetricsChange',
             'setBlocks',
-            'setLocale'
+            'setLocale',
+            'normalizeToolboxXML',
+            'requestToolboxUpdate',
+            'updateToolbox'
         ]);
         this.ScratchBlocks.prompt = this.handlePromptStart;
         this.ScratchBlocks.statusButtonCallback = this.handleConnectionModalStart;
@@ -89,6 +92,38 @@ class Blocks extends React.Component {
         this.onTargetsUpdate = debounce(this.onTargetsUpdate, 100);
         this.toolboxUpdateQueue = [];
     }
+
+    /**
+     * Convierte cualquier valor recibido como toolboxXML a un string XML seguro.
+     * - Si ya es string, lo devuelve tal cual.
+     * - Si es un Node (tiene nodeType/ownerDocument), usa XMLSerializer.
+     * - Si tiene outerHTML, usa outerHTML.
+     * - Si no se puede serializar, devuelve '<xml></xml>'.
+     */
+    // eslint-disable-next-line react/sort-comp
+    normalizeToolboxXML (value) {
+        try {
+            if (!value) return '<xml></xml>';
+            const t = typeof value;
+            console.log('[VisionKit] Tipo de toolboxXML:', t, value);
+            if (t === 'string') return value;
+
+            // ¿Es un nodo DOM?
+            if (value && (value.nodeType || value.ownerDocument)) {
+                const serializer = new XMLSerializer();
+                return serializer.serializeToString(value);
+            }
+            // ¿Tiene outerHTML?
+            if (value && value.outerHTML) return value.outerHTML;
+
+            // Último recurso: no sabemos serializar ese objeto
+            return '<xml></xml>';
+        } catch (e) {
+            console.warn('[VisionKit] Error normalizando toolboxXML:', e);
+            return '<xml></xml>';
+        }
+    }
+
     componentDidMount () {
         this.ScratchBlocks = VMScratchBlocks(this.props.vm, this.props.useCatBlocks);
         this.ScratchBlocks.prompt = this.handlePromptStart;
@@ -99,10 +134,13 @@ class Blocks extends React.Component {
         this.ScratchBlocks.Procedures.externalProcedureDefCallback = this.props.onActivateCustomProcedures;
         this.ScratchBlocks.ScratchMsgs.setLocale(this.props.locale);
 
+        // ✅ Normalizamos el toolbox antes de inyectar Blockly
+        const safeToolboxXML = this.normalizeToolboxXML(this.props.toolboxXML);
+
         const workspaceConfig = defaultsDeep({},
             Blocks.defaultOptions,
             this.props.options,
-            {rtl: this.props.isRtl, toolbox: this.props.toolboxXML, colours: getColorsForTheme(this.props.theme)}
+            {rtl: this.props.isRtl, toolbox: safeToolboxXML, colours: getColorsForTheme(this.props.theme)}
         );
         this.workspace = this.ScratchBlocks.inject(this.blocks, workspaceConfig);
 
@@ -121,10 +159,8 @@ class Blocks extends React.Component {
         toolboxWorkspace.registerButtonCallback('MAKE_A_LIST', varListButtonCallback('list'));
         toolboxWorkspace.registerButtonCallback('MAKE_A_PROCEDURE', procButtonCallback);
 
-        // Store the xml of the toolbox that is actually rendered.
-        // This is used in componentDidUpdate instead of prevProps, because
-        // the xml can change while e.g. on the costumes tab.
-        this._renderedToolboxXML = this.props.toolboxXML;
+        // Guardamos el XML realmente renderizado (normalizado)
+        this._renderedToolboxXML = safeToolboxXML;
 
         // we actually never want the workspace to enable "refresh toolbox" - this basically re-renders the
         // entire toolbox every time we reset the workspace.  We call updateToolbox as a part of
@@ -197,7 +233,17 @@ class Blocks extends React.Component {
     }
     componentWillUnmount () {
         this.detachVM();
-        this.workspace.dispose();
+        if (this.workspace && typeof this.workspace.dispose === 'function') {
+            try {
+                this.workspace.dispose();
+                this.workspace = null;
+                console.log('[VisionKit] Workspace liberado correctamente.');
+            } catch (err) {
+                console.warn('[VisionKit] Error liberando workspace:', err);
+            }
+        } else {
+            console.warn('[VisionKit] Workspace ya no existía al desmontar.');
+        }
         clearTimeout(this.toolboxUpdateTimeout);
 
         // Clear the flyout blocks so that they can be recreated on mount.
@@ -227,8 +273,11 @@ class Blocks extends React.Component {
 
         const categoryId = this.workspace.toolbox_.getSelectedCategoryId();
         const offset = this.workspace.toolbox_.getCategoryScrollOffset();
-        this.workspace.updateToolbox(this.props.toolboxXML);
-        this._renderedToolboxXML = this.props.toolboxXML;
+
+        // ✅ Siempre usar XML seguro aquí también
+        const safeToolboxXML = this.normalizeToolboxXML(this.props.toolboxXML);
+        this.workspace.updateToolbox(safeToolboxXML);
+        this._renderedToolboxXML = safeToolboxXML;
 
         // In order to catch any changes that mutate the toolbox during "normal runtime"
         // (variable changes/etc), re-enable toolbox refresh.
@@ -386,15 +435,6 @@ class Blocks extends React.Component {
         try {
             this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXml(dom, this.workspace);
         } catch (error) {
-            // The workspace is likely incomplete. What did update should be
-            // functional.
-            //
-            // Instead of throwing the error, by logging it and continuing as
-            // normal lets the other workspace update processes complete in the
-            // gui and vm, which lets the vm run even if the workspace is
-            // incomplete. Throwing the error would keep things like setting the
-            // correct editing target from happening which can interfere with
-            // some blocks and processes in the vm.
             if (error.message) {
                 error.message = `Workspace Update Error: ${error.message}`;
             }
@@ -410,23 +450,14 @@ class Blocks extends React.Component {
             this.workspace.resize();
         }
 
-        // Clear the undo state of the workspace since this is a
-        // fresh workspace and we don't want any changes made to another sprites
-        // workspace to be 'undone' here.
         this.workspace.clearUndo();
     }
     handleMonitorsUpdate (monitors) {
-        // Update the checkboxes of the relevant monitors.
-        // TODO: What about monitors that have fields? See todo in scratch-vm blocks.js changeBlock:
-        // https://github.com/LLK/scratch-vm/blob/2373f9483edaf705f11d62662f7bb2a57fbb5e28/src/engine/blocks.js#L569-L576
         const flyout = this.workspace.getFlyout();
         for (const monitor of monitors.values()) {
             const blockId = monitor.get('id');
             const isVisible = monitor.get('visible');
             flyout.setCheckboxState(blockId, isVisible);
-            // We also need to update the isMonitored flag for this block on the VM, since it's used to determine
-            // whether the checkbox is activated or not when the checkbox is re-displayed (e.g. local variables/blocks
-            // when switching between sprites).
             const block = this.props.vm.runtime.monitorBlocks.getBlock(blockId);
             if (block) {
                 block.isMonitored = isVisible;
@@ -444,14 +475,10 @@ class Blocks extends React.Component {
                     } else if (blockInfo.json) {
                         staticBlocksJson.push(injectExtensionBlockTheme(blockInfo.json, this.props.theme));
                     }
-                    // otherwise it's a non-block entry such as '---'
                 });
 
                 this.ScratchBlocks.defineBlocksWithJsonArray(staticBlocksJson);
                 dynamicBlocksInfo.forEach(blockInfo => {
-                    // This is creating the block factory / constructor -- NOT a specific instance of the block.
-                    // The factory should only know static info about the block: the category info and the opcode.
-                    // Anything else will be picked up from the XML attached to the block instance.
                     const extendedOpcode = `${categoryInfo.id}_${blockInfo.info.opcode}`;
                     const blockDefinition =
                         defineDynamicBlock(this.ScratchBlocks, categoryInfo, blockInfo, extendedOpcode);
@@ -460,22 +487,18 @@ class Blocks extends React.Component {
             }
         };
 
-        // scratch-blocks implements a menu or custom field as a special kind of block ("shadow" block)
-        // these actually define blocks and MUST run regardless of the UI state
         defineBlocks(
             Object.getOwnPropertyNames(categoryInfo.customFieldTypes)
                 .map(fieldTypeName => categoryInfo.customFieldTypes[fieldTypeName].scratchBlocksDefinition));
         defineBlocks(categoryInfo.menus);
         defineBlocks(categoryInfo.blocks);
 
-        // Update the toolbox with new blocks if possible
         const toolboxXML = this.getToolboxXML();
         if (toolboxXML) {
             this.props.updateToolboxState(toolboxXML);
         }
     }
     handleBlocksInfoUpdate (categoryInfo) {
-        // @todo Later we should replace this to avoid all the warnings from redefining blocks.
         this.handleExtensionAdded(categoryInfo);
     }
     handleCategorySelected (categoryId) {
@@ -497,7 +520,7 @@ class Blocks extends React.Component {
             this.ScratchBlocks.Msg.VARIABLE_MODAL_TITLE;
         p.prompt.varType = typeof optVarType === 'string' ?
             optVarType : this.ScratchBlocks.SCALAR_VARIABLE_TYPE;
-        p.prompt.showVariableOptions = // This flag means that we should show variable/list options about scope
+        p.prompt.showVariableOptions =
             optVarType !== this.ScratchBlocks.BROADCAST_MESSAGE_VARIABLE_TYPE &&
             p.prompt.title !== this.ScratchBlocks.Msg.RENAME_VARIABLE_MODAL_TITLE &&
             p.prompt.title !== this.ScratchBlocks.Msg.RENAME_LIST_MODAL_TITLE;
@@ -514,11 +537,6 @@ class Blocks extends React.Component {
         this.props.onOpenSoundRecorder();
     }
 
-    /*
-     * Pass along information about proposed name and variable options (scope and isCloud)
-     * and additional potentially conflicting variable names from the VM
-     * to the variable validation prompt callback used in scratch-blocks.
-     */
     handlePromptCallback (input, variableOptions) {
         this.state.prompt.callback(
             input,

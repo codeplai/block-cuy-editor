@@ -1,9 +1,18 @@
+/* ===========================================================
+   ✅ Loaders personalizados
+   =========================================================== */
 declare module '!arraybuffer-loader!.*' {
-  declare const value: ArrayBuffer;
+  const value: ArrayBuffer;
   export default value;
 }
 
 declare module '!raw-loader!.*' {
-  declare const value: string;
+  const value: string;
   export default value;
 }
+
+/* ===========================================================
+   ✅ Scratch VM (resuelve los imports locales)
+   =========================================================== */
+declare module '@scratch/scratch-vm';
+declare module 'scratch-vm';

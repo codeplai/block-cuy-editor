@@ -1,15 +1,34 @@
+/* eslint-disable quote-props */
+/* eslint-disable func-style */
+import registerVisionBlocks from './vision-autoregister';
+
 /**
  * 🎨 VisionKit Decorator
- * Registra las extensiones Vision y actualiza el toolbox dinámicamente.
+ * Espera a que la VM y ScratchBlocks estén listos, registra las extensiones
+ * y actualiza el toolbox de manera segura.
  */
 
 const decorateVisionToolbox = function (vm, gui) {
-    console.log('🟢 [VisionKit] Decorador iniciado, esperando VM...');
+    console.log('🟢 [VisionKit] Decorador iniciado, esperando entorno completo...');
+
     const waitForVM = setInterval(() => {
-        if (window.vm && window.vm.runtime && window.vm.extensionManager) {
+        const candidateVM =
+            vm ||
+            window.vm ||
+            window.Scratch?.vm ||
+            gui?.props?.vm ||
+            gui?.state?.vm ||
+            gui?.vm;
+
+        const hasVM = candidateVM?.runtime && candidateVM?.extensionManager;
+        const hasBlocks = window.ScratchBlocks?.Blocks;
+
+        console.log(`⏳ [VisionKit] Esperando... VM:${!!hasVM} | ScratchBlocks:${!!hasBlocks}`);
+
+        if (hasVM && hasBlocks) {
             clearInterval(waitForVM);
-            console.log('⚙️ [VisionKit] VM detectada, registrando extensiones...');
-            registerExtensions(window.vm, gui);
+            console.log('⚙️ [VisionKit] VM detectada correctamente, registrando extensiones...');
+            registerExtensions(candidateVM, gui);
         }
     }, 800);
 };
@@ -18,7 +37,7 @@ const decorateVisionToolbox = function (vm, gui) {
  * 🔧 Registra las extensiones Vision dentro de la VM y actualiza la GUI.
  */
 
-const registerExtensions = function (vm, gui) {
+const registerExtensions = function (vm) {
     try {
         const modules = {
             visionactions: require('scratch-vm/src/extensions/vision-actions'),
@@ -27,43 +46,33 @@ const registerExtensions = function (vm, gui) {
             visionadvanced: require('scratch-vm/src/extensions/vision-advanced')
         };
 
-        // 🔹 Registrar extensiones si no lo están aún
-        Object.entries(modules).forEach(([id, mod]) => {
-            if (!vm.extensionManager.isExtensionLoaded(id)) {
-                vm.extensionManager._registerInternalExtension(mod);
-                console.log(`🧩 [VisionKit] Registrada extensión interna: ${id}`);
+        Object.entries(modules).forEach(([id, ExtensionClass]) => {
+            try {
+                if (!vm.extensionManager.isExtensionLoaded(id)) {
+                    const instance = new ExtensionClass(vm.runtime);
+                    vm.extensionManager._loadedExtensions[id] = instance;
+
+                    const primitives = instance.getPrimitives ? instance.getPrimitives() : {};
+                    Object.assign(vm.runtime._primitives, primitives);
+
+                    console.log(`✅ [VisionKit] Extensión registrada:
+                        ${id} (${Object.keys(primitives).length} bloques).`);
+                }
+            } catch (err) {
+                console.warn(`⚠️ [VisionKit] Error al registrar ${id}:`, err);
             }
         });
 
-        // 🔹 Esperar hasta que existan los bloques
-        const waitBlocks = setInterval(() => {
-            const primitives = Object.keys(vm.runtime._primitives || {}).filter(k =>
-                k.includes('vision')
-            );
-            if (primitives.length > 0) {
-                clearInterval(waitBlocks);
-                console.log(`🎨 [VisionKit] Primitivos Vision detectados: ${primitives.length}`);
+        console.log('✨ [VisionKit] Registro manual completo. Esperando toolbox...');
 
-                // 🔁 Actualizar toolbox
-                if (gui?.props?.vm?.extensionManager) {
-                    gui.props.vm.extensionManager.refreshBlocks();
-                    console.log('🧱 [VisionKit] refreshBlocks ejecutado correctamente.');
-                }
-
-                if (gui?.props?.updateToolbox) {
-                    gui.props.updateToolbox();
-                    console.log('🎨 [VisionKit] Toolbox actualizado desde VisionKit.');
-                } else {
-                    vm.runtime.emit('EXTENSIONS_UPDATED');
-                    console.log('🎨 [VisionKit] Toolbox actualizado (evento fallback).');
-                }
-
-                // 🚀 Disparar evento para actualizar XML dinámico
-                window.dispatchEvent(new Event('refreshToolboxVision'));
+        // 🧠 Activar el registro visual
+        const waitForVisual = setInterval(() => {
+            if (window.ScratchBlocks?.Blocks && Object.keys(window.ScratchBlocks.Blocks).length > 0) {
+                clearInterval(waitForVisual);
+                console.log('🧠 [VisionKit] ScratchBlocks listo → ejecutando registerVisionBlocks()');
+                registerVisionBlocks();
             }
         }, 1000);
-
-        console.log('✅ [VisionKit] Todas las extensiones Vision registradas manualmente.');
     } catch (err) {
         console.error('❌ [VisionKit] Error al registrar extensiones Vision:', err);
     }

@@ -1,120 +1,69 @@
 /* eslint-disable quote-props */
-/* global ScratchBlocks */
-import {defaultColors} from './themes';
-
-const xmlOpen = '<xml style="display: none">';
-const xmlClose = '</xml>';
+/* eslint-disable func-style */
 
 /**
- * 🧱 Genera dinámicamente el XML del Toolbox para los bloques Vision.
- * Escanea todos los bloques de la VM que comiencen con "vision".
+ * 🧩 VisionKit Toolbox Generator
+ * Reemplaza el toolbox de Scratch por uno solo con las categorías Vision.
  */
 
+console.log('[VisionKit] 🧩 Iniciando makeToolboxXML (solo extensiones Vision)');
+
+/**
+ * Genera el XML del toolbox de VisionKit.
+ * @returns {string} XML válido con todas las categorías Vision.
+ */
 const makeToolboxXML = function () {
-    let visionBlocks = [];
+    const xml = `
+        <xml id="toolbox-categories" style="display:none"
+            xmlns="https://developers.google.com/blockly/xml">
 
-    try {
-        const vm = (window.Scratch && window.Scratch.vm) || window.vm;
-        if (vm && vm.runtime && vm.runtime._primitives) {
-            const allBlocks = Object.keys(vm.runtime._primitives);
-            visionBlocks = allBlocks.filter(id => id.startsWith('vision'));
-        }
-    } catch (err) {
-        console.warn('[VisionKit] No se pudo acceder al VM:', err);
-    }
+            <!-- 🔵 Vision Acciones -->
+            <category name="Vision Acciones" colour="#3B82F6">
+                <block type="visionactions_setImageURL"></block>
+                <block type="visionactions_setImageFile"></block>
+                <block type="visionactions_show"></block>
+                <block type="visionactions_exportProcessedImage"></block>
+                <block type="visionactions_exportPythonCode"></block>
+            </category>
 
-    if (!visionBlocks.length) {
-        console.warn('[VisionKit] No se encontraron bloques Vision registrados.');
-        setTimeout(() => window.dispatchEvent(new Event('refreshToolboxVision')), 1500);
-    }
+            <!-- 🟢 Vision Básico -->
+            <category name="Vision Básico" colour="#10B981">
+                <block type="visionbasic_brightness"></block>
+                <block type="visionbasic_contrast"></block>
+                <block type="visionbasic_invert"></block>
+                <block type="visionbasic_pixelate"></block>
+                <block type="visionbasic_circles"></block>
+                <block type="visionbasic_rectangles"></block>
+            </category>
 
-    const blockList = visionBlocks.length ? visionBlocks.map(id => `<block type="
-        ${id}"></block>`).join('\n') : '<label text="Cargando bloques Vision..."></label>';
+            <!-- 🟣 Vision Intermedio -->
+            <category name="Vision Intermedio" colour="#8B5CF6">
+                <block type="visionintermediate_edges"></block>
+                <block type="visionintermediate_gray"></block>
+                <block type="visionintermediate_gaussian"></block>
+                <block type="visionintermediate_rotate"></block>
+                <block type="visionintermediate_resize"></block>
+            </category>
 
-    const visionCategoryXML = `
-        <category
-            name="Vision Kit"
-            id="vision"
-            colour="${defaultColors.more.primary}"
-            secondaryColour="${defaultColors.more.tertiary}">
-            ${blockList}
-        </category>
+            <!-- 🔴 Vision Avanzado -->
+            <category name="Vision Avanzado" colour="#EF4444">
+                <block type="visionadvanced_segment"></block>
+                <block type="visionadvanced_detectFeatures"></block>
+                <block type="visionadvanced_matchFeatures"></block>
+                <block type="visionadvanced_threshold"></block>
+                <block type="visionadvanced_histogram"></block>
+            </category>
+
+        </xml>
     `;
-
-    return [xmlOpen, visionCategoryXML, xmlClose].join('\n');
+    console.log('✅ [VisionKit] XML solo con extensiones Vision cargado correctamente.');
+    return xml;
 };
 
-// ============================================================
-// 🔧 REGISTRO AUTOMÁTICO DE BLOQUES (anti-bloques rojos)
-// ============================================================
+// 🔁 Registrar globalmente
 if (typeof window !== 'undefined') {
-    const defineAutoBlocks = () => {
-        const vm = (window.Scratch && window.Scratch.vm) || window.vm;
-        if (!vm || !vm.runtime || !vm.runtime._primitives || !window.ScratchBlocks) return;
-
-        const blockIds = Object.keys(vm.runtime._primitives).filter(id =>
-            id.startsWith('vision')
-        );
-
-        blockIds.forEach(id => {
-            if (!ScratchBlocks.Blocks[id]) {
-                ScratchBlocks.Blocks[id] = {
-                    init () {
-                        const label = id
-                            .replace(/^vision_?/, '')
-                            .replace(/_/g, ' ')
-                            .trim();
-
-                        this.jsonInit({
-                            type: id,
-                            message0: label || id,
-                            previousStatement: null,
-                            nextStatement: null,
-                            colour: '#0E7490',
-                            tooltip: id,
-                            helpUrl: ''
-                        });
-                    }
-                };
-            }
-        });
-
-        console.log(`[✅ VisionKit] ${blockIds.length} bloques visuales listos.`);
-    };
-
-    // ⏳ Esperar a que VM y Blockly estén listas
-    const waitForBlocks = setInterval(() => {
-        const ready =
-            window.ScratchBlocks &&
-            ((window.Scratch && window.Scratch.vm) || window.vm);
-        if (ready) {
-            clearInterval(waitForBlocks);
-            defineAutoBlocks();
-        }
-    }, 800);
-
-    // 🔁 Refrescar toolbox Vision dinámicamente
-    window.addEventListener('refreshToolboxVision', () => {
-        console.log('[VisionKit] 🔁 Refrescando toolbox Vision...');
-        const xml = makeToolboxXML();
-
-        // Buscar el store Redux (3 posibles ubicaciones)
-        const store =
-            window.store ||
-            (window.ScratchGUI && window.ScratchGUI.store) ||
-            (window.__REDUX_DEVTOOLS_EXTENSION__ &&
-                window.__REDUX_DEVTOOLS_EXTENSION__.store);
-
-        if (store && store.dispatch) {
-            store.dispatch({
-                type: 'scratch-gui/toolbox/UPDATE_TOOLBOX',
-                toolboxXML: xml
-            });
-            console.log('[VisionKit] 🧱 Toolbox Vision actualizado dinámicamente.');
-        } else {
-            console.warn('[VisionKit] ⚠️ No se encontró store Redux para actualizar toolbox.');
-        }
-    });
+    window.makeToolboxXML = makeToolboxXML;
+    console.log('[VisionKit] makeToolboxXML (Vision Only) registrado globalmente.');
 }
 
 export default makeToolboxXML;
