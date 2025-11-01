@@ -6,6 +6,10 @@ class VisionActions {
         this.runtime = runtime;
         this.baseURL = 'http://127.0.0.1:8001';
         this.lastDataURL = null;
+        // Inicializar historial de operaciones Python en runtime (compartido)
+        if (!this.runtime._visionPythonHistory) {
+            this.runtime._visionPythonHistory = [];
+        }
     }
 
     _showAlert (message) {
@@ -206,7 +210,47 @@ class VisionActions {
     }
 
     exportPythonCode () {
-        this._showAlert('El código Python se exportará desde Vision Básico / Intermedio / Avanzado.');
+        const history = this.runtime._visionPythonHistory || [];
+        if (history.length === 0) {
+            this._showAlert('⚠️ No hay operaciones para exportar. Ejecuta algún bloque primero.');
+            return;
+        }
+
+        // Generar código Python
+        const lines = [
+            '# Código Python generado desde VisionKit',
+            `# Fecha: ${new Date().toLocaleString()}`,
+            '',
+            'import cv2',
+            'import numpy as np',
+            '',
+            '# Cargar imagen base',
+            "img = cv2.imread('imagen.jpg')",
+            ''
+        ];
+
+        for (const entry of history) {
+            lines.push(`# ${entry.description}`);
+            lines.push(entry.code);
+            lines.push('');
+        }
+
+        lines.push('# Guardar imagen procesada');
+        lines.push("cv2.imwrite('resultado.jpg', img)");
+        lines.push("print('✅ Procesamiento completo')");
+
+        const code = lines.join('\n');
+
+        // Descargar como archivo .py
+        const blob = new Blob([code], {type: 'text/plain'});
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'vision_script.py';
+        link.click();
+        URL.revokeObjectURL(url);
+
+        this._showAlert('✅ Código Python exportado');
     }
 }
 

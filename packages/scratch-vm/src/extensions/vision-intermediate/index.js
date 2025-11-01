@@ -86,7 +86,7 @@ class VisionIntermediate {
 
             if (!resp.ok) {
                 console.error(`[VisionIntermediate] Error HTTP ${resp.status}`);
-                // Como último recurso, volver a mostrar la última imagen conocida para no dejar al usuario “sin nada”.
+                // Como último recurso, volver a mostrar la última imagen conocida para no dejar al usuario "sin nada".
                 if (imageDataURL) this.runtime.emit('VISION_IMAGE', imageDataURL);
                 return;
             }
@@ -99,6 +99,14 @@ class VisionIntermediate {
                     // ignore
                 }
                 this.runtime.emit('VISION_IMAGE', data.image_b64);
+
+                // Registrar operación para exportación Python
+                if (params.pythonCode) {
+                    if (!this.runtime._visionPythonHistory) {
+                        this.runtime._visionPythonHistory = [];
+                    }
+                    this.runtime._visionPythonHistory.push(params.pythonCode);
+                }
             } else {
                 console.warn('[VisionIntermediate] No se recibió imagen en respuesta.');
                 if (imageDataURL) this.runtime.emit('VISION_IMAGE', imageDataURL);
@@ -115,21 +123,50 @@ class VisionIntermediate {
     // =========================================================
     edges () {
         // Alinear con backend: usa operación "canny" con umbrales por defecto
-        return this._call('canny', {t1: 100, t2: 200});
+        return this._call('canny', {
+            t1: 100,
+            t2: 200,
+            pythonCode: {
+                description: 'Detectar bordes (Canny)',
+                code: 'img = cv2.Canny(img, 100, 200)\nimg = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)'
+            }
+        });
     }
 
     gray () {
         // El backend actual no expone "gray"; aproximamos con SOBEL para un resultado en escala de grises
-        return this._call('sobel');
+        return this._call('sobel', {
+            pythonCode: {
+                description: 'Convertir a escala de grises (Sobel)',
+                code: `gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+grad_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
+grad_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
+img = cv2.convertScaleAbs(cv2.addWeighted(grad_x, 0.5, grad_y, 0.5, 0))
+img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)`
+            }
+        });
     }
 
     gaussian () {
-        return this._call('gaussian');
+        return this._call('gaussian', {
+            pythonCode: {
+                description: 'Aplicar filtro gaussiano',
+                code: 'img = cv2.GaussianBlur(img, (5, 5), 0)'
+            }
+        });
     }
 
     rotate (args) {
         // Backend espera "deg" en lugar de "angle"
-        return this._call('rotate', {deg: args.ANGLE});
+        return this._call('rotate', {
+            deg: args.ANGLE,
+            pythonCode: {
+                description: `Rotar imagen ${args.ANGLE} grados`,
+                code: `h, w = img.shape[:2]
+M = cv2.getRotationMatrix2D((w//2, h//2), ${args.ANGLE}, 1)
+img = cv2.warpAffine(img, M, (w, h))`
+            }
+        });
     }
 
     async resize (args) {
@@ -146,7 +183,13 @@ class VisionIntermediate {
         const sx = Number(args.W) / img.width;
         const sy = Number(args.H) / img.height;
         const s = Math.max(0.1, Math.min(5, Math.min(sx || 1, sy || 1)));
-        return this._call('scale', {s});
+        return this._call('scale', {
+            s,
+            pythonCode: {
+                description: `Redimensionar imagen a ${args.W} × ${args.H}`,
+                code: `img = cv2.resize(img, (${args.W}, ${args.H}))`
+            }
+        });
     }
 }
 
