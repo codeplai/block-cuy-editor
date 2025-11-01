@@ -76,25 +76,37 @@ class VisionIntermediate {
     // =========================================================
     async _call (op, params = {}) {
         try {
+            const imageDataURL = this.runtime?._visionLastDataURL;
+            const body = imageDataURL ? {op, params, image_b64: imageDataURL} : {op, params};
             const resp = await fetch(`${this.baseURL}/process`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({op, params})
+                body: JSON.stringify(body)
             });
 
             if (!resp.ok) {
                 console.error(`[VisionIntermediate] Error HTTP ${resp.status}`);
+                // Como último recurso, volver a mostrar la última imagen conocida para no dejar al usuario “sin nada”.
+                if (imageDataURL) this.runtime.emit('VISION_IMAGE', imageDataURL);
                 return;
             }
 
             const data = await resp.json();
-            if (data.image_b64) {
+            if (data && data.image_b64) {
+                try {
+                    this.runtime._visionLastDataURL = data.image_b64;
+                } catch (e) {
+                    // ignore
+                }
                 this.runtime.emit('VISION_IMAGE', data.image_b64);
             } else {
                 console.warn('[VisionIntermediate] No se recibió imagen en respuesta.');
+                if (imageDataURL) this.runtime.emit('VISION_IMAGE', imageDataURL);
             }
         } catch (err) {
             console.error('[VisionIntermediate] Error en conexión con backend:', err);
+            const imageDataURL = this.runtime?._visionLastDataURL;
+            if (imageDataURL) this.runtime.emit('VISION_IMAGE', imageDataURL);
         }
     }
 
@@ -102,11 +114,13 @@ class VisionIntermediate {
     // 🧩 IMPLEMENTACIONES DE BLOQUES
     // =========================================================
     edges () {
-        return this._call('edges');
+        // Alinear con backend: usa operación "canny" con umbrales por defecto
+        return this._call('canny', {t1: 100, t2: 200});
     }
 
     gray () {
-        return this._call('gray');
+        // El backend actual no expone "gray"; aproximamos con SOBEL para un resultado en escala de grises
+        return this._call('sobel');
     }
 
     gaussian () {
@@ -114,11 +128,25 @@ class VisionIntermediate {
     }
 
     rotate (args) {
-        return this._call('rotate', {angle: args.ANGLE});
+        // Backend espera "deg" en lugar de "angle"
+        return this._call('rotate', {deg: args.ANGLE});
     }
 
-    resize (args) {
-        return this._call('resize', {w: args.W, h: args.H});
+    async resize (args) {
+        // El backend expone "scale" con un factor "s". Calculamos un factor aproximado a partir del ancho/alto deseado.
+        const dataURL = this.runtime?._visionLastDataURL;
+        if (!dataURL) return this._call('scale', {s: 1});
+        const img = await new Promise(resolve => {
+            const el = new Image();
+            el.onload = () => resolve(el);
+            el.onerror = () => resolve(null);
+            el.src = dataURL;
+        });
+        if (!img || !img.width || !img.height) return this._call('scale', {s: 1});
+        const sx = Number(args.W) / img.width;
+        const sy = Number(args.H) / img.height;
+        const s = Math.max(0.1, Math.min(5, Math.min(sx || 1, sy || 1)));
+        return this._call('scale', {s});
     }
 }
 

@@ -46,6 +46,8 @@ import GUIComponent from '../components/gui/gui.jsx';
 import {GUIStoragePropType} from '../gui-config';
 import {AccountMenuOptionsPropTypes} from '../lib/account-menu-options';
 import registerVisionExtensions from '../lib/vision-register.js';
+import initVisionStageListener from '../lib/vision-stage-listener.js';
+import VisionBitmapAdapter from '../lib/vision-bitmap-adapter.js';
 
 class GUI extends React.Component {
     componentDidMount () {
@@ -65,6 +67,12 @@ class GUI extends React.Component {
                 // Dibujo inicial para evitar parpadeos negros
                 this.props.vm.renderer.draw();
             }
+            // Adjuntar adaptador V2 de bitmaps requerido por load-costume
+            try {
+                this.props.vm.attachV2BitmapAdapter(new VisionBitmapAdapter());
+            } catch (e) {
+                // ignore
+            }
         } catch (e) {
             // No crítico; Stage lo adjuntará después
         }
@@ -81,6 +89,13 @@ class GUI extends React.Component {
         // Registrar extensiones VisionKit una sola vez (guardia interna evita duplicados)
         try {
             registerVisionExtensions();
+        } catch (e) {
+            // ignore
+        }
+
+        // Instalar listener para mostrar imágenes en el Escenario
+        try {
+            initVisionStageListener();
         } catch (e) {
             // ignore
         }

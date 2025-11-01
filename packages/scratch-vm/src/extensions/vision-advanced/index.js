@@ -71,26 +71,37 @@ class VisionAdvanced {
     // =========================================================
     async _call (op, params = {}) {
         try {
+            const imageDataURL = this.runtime?._visionLastDataURL;
+            const body = imageDataURL ? {op, params, image_b64: imageDataURL} : {op, params};
             const resp = await fetch(`${this.baseURL}/process`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({op, params})
+                body: JSON.stringify(body)
             });
 
             if (!resp.ok) {
                 console.error(`[VisionAdvanced] Error HTTP ${resp.status}`);
+                if (imageDataURL) this.runtime.emit('VISION_IMAGE', imageDataURL);
                 return;
             }
 
             const data = await resp.json();
 
-            if (data.image_b64) {
+            if (data && data.image_b64) {
+                try {
+                    this.runtime._visionLastDataURL = data.image_b64;
+                } catch (e) {
+                    // ignore
+                }
                 this.runtime.emit('VISION_IMAGE', data.image_b64);
             } else {
                 console.warn('[VisionAdvanced] No se recibió imagen en respuesta.');
+                if (imageDataURL) this.runtime.emit('VISION_IMAGE', imageDataURL);
             }
         } catch (err) {
             console.error('[VisionAdvanced] Error conectando con backend:', err);
+            const imageDataURL = this.runtime?._visionLastDataURL;
+            if (imageDataURL) this.runtime.emit('VISION_IMAGE', imageDataURL);
         }
     }
 
@@ -98,23 +109,29 @@ class VisionAdvanced {
     // 🧠 IMPLEMENTACIONES DE BLOQUES
     // =========================================================
     segment () {
-        return this._call('segment');
+        // Mapear a k-means en backend
+        return this._call('kmeans');
     }
 
     detectFeatures () {
-        return this._call('detectFeatures');
+        // Mapear a ORB
+        return this._call('orb');
     }
 
     matchFeatures () {
-        return this._call('matchFeatures');
+        // A falta de implementación de emparejamiento, mostramos características ORB para dar feedback visual
+        return this._call('orb');
     }
 
     threshold (args) {
-        return this._call('threshold', {thresh: args.THRESH});
+        // Aproximar con watershed binario (el backend actual no expone "threshold" genérico)
+        void args; // sin usar por ahora
+        return this._call('watershed');
     }
 
     histogram () {
-        return this._call('histogram');
+        // Mostrar un efecto visible; se usa "sharpen" como sustituto temporal
+        return this._call('sharpen');
     }
 }
 

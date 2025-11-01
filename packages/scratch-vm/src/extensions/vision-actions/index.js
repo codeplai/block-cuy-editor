@@ -113,6 +113,28 @@ class VisionActions {
             const reader = new FileReader();
             reader.onload = () => {
                 this.lastDataURL = reader.result;
+                // Compartir también por runtime para otras extensiones (básico/intermedio/avanzado)
+                try {
+                    this.runtime._visionLastDataURL = this.lastDataURL;
+                } catch (e) {
+                    // ignore
+                }
+                // Enviar al backend para fijar imagen base en sesión (si está disponible)
+                (async () => {
+                    try {
+                        await fetch(`${this.baseURL}/process`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                image_b64: this.lastDataURL,
+                                op: 'none',
+                                params: {}
+                            })
+                        });
+                    } catch (e) {
+                        // opcional, no bloquear UI
+                    }
+                })();
                 this.runtime.emit('VISION_IMAGE', this.lastDataURL);
             };
             reader.readAsDataURL(blob);
@@ -132,7 +154,29 @@ class VisionActions {
                 const reader = new FileReader();
                 reader.onload = () => {
                     this.lastDataURL = reader.result;
+                    // Compartir también por runtime para otras extensiones
+                    try {
+                        this.runtime._visionLastDataURL = this.lastDataURL;
+                    } catch (err) {
+                        // ignore
+                    }
                     this.runtime.emit('VISION_IMAGE', this.lastDataURL);
+                    // Intentar notificar al backend la imagen base
+                    (async () => {
+                        try {
+                            await fetch(`${this.baseURL}/process`, {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({
+                                    image_b64: this.lastDataURL,
+                                    op: 'none',
+                                    params: {}
+                                })
+                            });
+                        } catch (err) {
+                            // silencioso
+                        }
+                    })();
                     resolve();
                 };
                 reader.readAsDataURL(file);
@@ -142,19 +186,21 @@ class VisionActions {
     }
 
     show () {
-        if (this.lastDataURL) {
-            this.runtime.emit('VISION_IMAGE', this.lastDataURL);
+        const data = this.runtime?._visionLastDataURL || this.lastDataURL;
+        if (data) {
+            this.runtime.emit('VISION_IMAGE', data);
         } else {
             this._showAlert('⚠️ No hay imagen cargada.');
         }
     }
 
     exportProcessedImage () {
-        if (!this.lastDataURL) {
+        const data = this.runtime?._visionLastDataURL || this.lastDataURL;
+        if (!data) {
             return this._showAlert('⚠️ No hay imagen procesada.');
         }
         const link = document.createElement('a');
-        link.href = this.lastDataURL;
+        link.href = data;
         link.download = 'imagen_procesada.png';
         link.click();
     }

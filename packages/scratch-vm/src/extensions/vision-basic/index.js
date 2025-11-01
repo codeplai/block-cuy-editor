@@ -90,10 +90,12 @@ class VisionBasic {
     // =========================================================
     async _call (op, params = {}) {
         try {
+            // Incluir imagen base si está disponible compartida por VisionActions
+            const imageDataURL = this.runtime?._visionLastDataURL;
             const resp = await fetch(`${this.baseURL}/process`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({op, params})
+                body: JSON.stringify(imageDataURL ? {op, params, image_b64: imageDataURL} : {op, params})
             });
 
             if (!resp.ok) {
@@ -103,6 +105,11 @@ class VisionBasic {
 
             const data = await resp.json();
             if (data.image_b64) {
+                try {
+                    this.runtime._visionLastDataURL = data.image_b64;
+                } catch (e) {
+                    // ignore
+                }
                 this.runtime.emit('VISION_IMAGE', data.image_b64);
             } else {
                 console.warn('[VisionBasic] No se recibió imagen en respuesta.');
