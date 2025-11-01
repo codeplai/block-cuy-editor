@@ -4,6 +4,7 @@ import {compose} from 'redux';
 import {connect} from 'react-redux';
 import ReactModal from 'react-modal';
 import VM from '@scratch/scratch-vm';
+import Renderer from '@scratch/scratch-render';
 import {injectIntl, intlShape} from 'react-intl';
 
 import ErrorBoundaryHOC from '../lib/error-boundary-hoc.jsx';
@@ -44,6 +45,7 @@ import {PLATFORM} from '../lib/platform.js';
 import GUIComponent from '../components/gui/gui.jsx';
 import {GUIStoragePropType} from '../gui-config';
 import {AccountMenuOptionsPropTypes} from '../lib/account-menu-options';
+import registerVisionExtensions from '../lib/vision-register.js';
 
 class GUI extends React.Component {
     componentDidMount () {
@@ -52,6 +54,35 @@ class GUI extends React.Component {
         this.props.storage.setProjectMetadata?.(this.props.projectId);
         if (this.props.platform) {
             this.props.setPlatform(this.props.platform);
+        }
+
+        // Asegurar que la VM tenga renderer ANTES de cargar proyecto (evita "No rendering module present")
+        try {
+            if (!this.props.vm.renderer) {
+                const canvas = document.createElement('canvas');
+                const renderer = new Renderer(canvas);
+                this.props.vm.attachRenderer(renderer);
+                // Dibujo inicial para evitar parpadeos negros
+                this.props.vm.renderer.draw();
+            }
+        } catch (e) {
+            // No crítico; Stage lo adjuntará después
+        }
+
+        // Exponer la VM real (Redux) globalmente para VisionKit y herramientas externas
+        try {
+            if (!window.Scratch) window.Scratch = {};
+            window.Scratch.vm = this.props.vm;
+            window.vm = this.props.vm; // alias
+        } catch (e) {
+            // ignore
+        }
+
+        // Registrar extensiones VisionKit una sola vez (guardia interna evita duplicados)
+        try {
+            registerVisionExtensions();
+        } catch (e) {
+            // ignore
         }
     }
     componentDidUpdate (prevProps) {

@@ -19,22 +19,22 @@ class VisionAdvanced {
             color3: '#4C1D95',
             blocks: [
                 {
-                    opcode: 'visionadvanced_segment',
+                    opcode: 'segment',
                     blockType: BlockType.COMMAND,
                     text: 'segmentar imagen (k-means)'
                 },
                 {
-                    opcode: 'visionadvanced_detectFeatures',
+                    opcode: 'detectFeatures',
                     blockType: BlockType.COMMAND,
                     text: 'detectar características ORB'
                 },
                 {
-                    opcode: 'visionadvanced_matchFeatures',
+                    opcode: 'matchFeatures',
                     blockType: BlockType.COMMAND,
                     text: 'comparar características entre imágenes'
                 },
                 {
-                    opcode: 'visionadvanced_threshold',
+                    opcode: 'threshold',
                     blockType: BlockType.COMMAND,
                     text: 'aplicar umbral binario [THRESH]',
                     arguments: {
@@ -45,25 +45,24 @@ class VisionAdvanced {
                     }
                 },
                 {
-                    opcode: 'visionadvanced_histogram',
+                    opcode: 'histogram',
                     blockType: BlockType.COMMAND,
                     text: 'mostrar histograma de colores'
                 }
             ],
-            menus: {} // requerido aunque no tenga menús
+            menus: {}
         };
     }
-
     // =========================================================
     // ✅ REGISTRO DE PRIMITIVAS CON PREFIJOS CORRECTOS
     // =========================================================
     getPrimitives () {
         return {
-            visionadvanced_segment: this.segment.bind(this),
-            visionadvanced_detectFeatures: this.detectFeatures.bind(this),
-            visionadvanced_matchFeatures: this.matchFeatures.bind(this),
-            visionadvanced_threshold: this.threshold.bind(this),
-            visionadvanced_histogram: this.histogram.bind(this)
+            segment: this.segment.bind(this),
+            detectFeatures: this.detectFeatures.bind(this),
+            matchFeatures: this.matchFeatures.bind(this),
+            threshold: this.threshold.bind(this),
+            histogram: this.histogram.bind(this)
         };
     }
 
@@ -122,6 +121,4 @@ class VisionAdvanced {
 // =========================================================
 // ✅ EXPORTACIÓN FORMAL PARA SCRATCH VM
 // =========================================================
-module.exports = function (runtime) {
-    return new VisionAdvanced(runtime);
-};
+module.exports = VisionAdvanced;

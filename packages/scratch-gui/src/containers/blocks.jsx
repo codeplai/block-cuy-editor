@@ -52,6 +52,10 @@ class Blocks extends React.Component {
     constructor (props) {
         super(props);
         this.ScratchBlocks = VMScratchBlocks(props.vm, false);
+        // 🔧 Exponer ScratchBlocks globalmente para VisionKit y extensiones personalizadas
+        window.ScratchBlocks = this.ScratchBlocks;
+        window.Blockly = this.ScratchBlocks; // (alias opcional usado por algunos decoradores)
+
         bindAll(this, [
             'attachVM',
             'detachVM',
@@ -180,6 +184,19 @@ class Blocks extends React.Component {
         if (this.props.isVisible) {
             this.setLocale();
         }
+
+        // 🔄 Forzar una primera construcción del toolbox usando el estado actual del VM
+        // para evitar que el panel quede en blanco hasta que llegue el primer workspaceUpdate.
+        try {
+            const initialToolboxXML = this.getToolboxXML();
+            if (initialToolboxXML) {
+                this.props.updateToolboxState(initialToolboxXML);
+                // y actualizar inmediatamente el toolbox inyectado
+                this.requestToolboxUpdate();
+            }
+        } catch (e) {
+            // no crítico
+        }
     }
     shouldComponentUpdate (nextProps, nextState) {
         return (
@@ -271,30 +288,73 @@ class Blocks extends React.Component {
     updateToolbox () {
         this.toolboxUpdateTimeout = false;
 
-        const categoryId = this.workspace.toolbox_.getSelectedCategoryId();
-        const offset = this.workspace.toolbox_.getCategoryScrollOffset();
-
-        // ✅ Siempre usar XML seguro aquí también
-        const safeToolboxXML = this.normalizeToolboxXML(this.props.toolboxXML);
-        this.workspace.updateToolbox(safeToolboxXML);
-        this._renderedToolboxXML = safeToolboxXML;
-
-        // In order to catch any changes that mutate the toolbox during "normal runtime"
-        // (variable changes/etc), re-enable toolbox refresh.
-        // Using the setter function will rerender the entire toolbox which we just rendered.
-        this.workspace.toolboxRefreshEnabled_ = true;
-
-        const currentCategoryPos = this.workspace.toolbox_.getCategoryPositionById(categoryId);
-        const currentCategoryLen = this.workspace.toolbox_.getCategoryLengthById(categoryId);
-        if (offset < currentCategoryLen) {
-            this.workspace.toolbox_.setFlyoutScrollPos(currentCategoryPos + offset);
-        } else {
-            this.workspace.toolbox_.setFlyoutScrollPos(currentCategoryPos);
+        // Protección: si workspace o toolbox_ no están listos aún, reintentar más tarde
+        if (!this.workspace || !this.workspace.toolbox_) {
+            // Intentamos reprogramar la actualización del toolbox
+            try {
+                this.requestToolboxUpdate();
+            } catch (e) {
+                // no crítico
+            }
+            return;
         }
 
-        const queue = this.toolboxUpdateQueue;
-        this.toolboxUpdateQueue = [];
-        queue.forEach(fn => fn());
+        try {
+            let getSelectedCategoryId = null;
+            if (typeof this.workspace.toolbox_.getSelectedCategoryId === 'function') {
+                getSelectedCategoryId = this.workspace.toolbox_.getSelectedCategoryId.bind(this.workspace.toolbox_);
+            }
+            let getCategoryScrollOffset = null;
+            if (typeof this.workspace.toolbox_.getCategoryScrollOffset === 'function') {
+                getCategoryScrollOffset = this.workspace.toolbox_.getCategoryScrollOffset.bind(this.workspace.toolbox_);
+            }
+
+            const categoryId = getSelectedCategoryId ? getSelectedCategoryId() : null;
+            const offset = getCategoryScrollOffset ? getCategoryScrollOffset() : 0;
+
+            // ✅ Siempre usar XML seguro aquí también
+            const safeToolboxXML = this.normalizeToolboxXML(this.props.toolboxXML);
+            this.workspace.updateToolbox(safeToolboxXML);
+            this._renderedToolboxXML = safeToolboxXML;
+
+            // Reactivar refresh en toolbox si existe la propiedad
+            try {
+                this.workspace.toolboxRefreshEnabled_ = true;
+            } catch (err) {
+                // no crítico
+            }
+
+            if (categoryId) {
+                let getCategoryPosition = null;
+                if (typeof this.workspace.toolbox_.getCategoryPositionById === 'function') {
+                    getCategoryPosition = this.workspace.toolbox_.getCategoryPositionById.bind(this.workspace.toolbox_);
+                }
+                let getCategoryLength = null;
+                if (typeof this.workspace.toolbox_.getCategoryLengthById === 'function') {
+                    getCategoryLength = this.workspace.toolbox_.getCategoryLengthById.bind(this.workspace.toolbox_);
+                }
+                let setFlyoutScrollPos = null;
+                if (typeof this.workspace.toolbox_.setFlyoutScrollPos === 'function') {
+                    setFlyoutScrollPos = this.workspace.toolbox_.setFlyoutScrollPos.bind(this.workspace.toolbox_);
+                }
+
+                if (getCategoryPosition && getCategoryLength && setFlyoutScrollPos) {
+                    const currentCategoryPos = getCategoryPosition(categoryId);
+                    const currentCategoryLen = getCategoryLength(categoryId);
+                    if (offset < currentCategoryLen) {
+                        setFlyoutScrollPos(currentCategoryPos + offset);
+                    } else {
+                        setFlyoutScrollPos(currentCategoryPos);
+                    }
+                }
+            }
+
+            const queue = this.toolboxUpdateQueue;
+            this.toolboxUpdateQueue = [];
+            queue.forEach(fn => fn());
+        } catch (e) {
+            console.warn('[Blocks] updateToolbox error:', e);
+        }
     }
 
     withToolboxUpdates (fn) {
@@ -493,9 +553,20 @@ class Blocks extends React.Component {
         defineBlocks(categoryInfo.menus);
         defineBlocks(categoryInfo.blocks);
 
+        // Guardar info de categorías de extensiones (VisionKit) para que
+        // make-toolbox-xml pueda agregarlas al XML del toolbox.
+        try {
+            if (!window.__VISION_EXT_CATEGORIES) window.__VISION_EXT_CATEGORIES = {};
+            window.__VISION_EXT_CATEGORIES[categoryInfo.id] = categoryInfo;
+        } catch (e) {
+            // no crítico
+        }
+
         const toolboxXML = this.getToolboxXML();
         if (toolboxXML) {
             this.props.updateToolboxState(toolboxXML);
+            // Forzar actualización inmediata del toolbox para reflejar nuevas categorías
+            this.requestToolboxUpdate?.();
         }
     }
     handleBlocksInfoUpdate (categoryInfo) {
@@ -507,9 +578,42 @@ class Blocks extends React.Component {
             this.handleConnectionModalStart(categoryId);
         }
 
-        this.withToolboxUpdates(() => {
-            this.workspace.toolbox_.setSelectedCategoryById(categoryId);
-        });
+        // Protegemos contra condiciones donde `workspace` o `toolbox_` aún no
+        // están disponibles (p. ej. componentes montados parcialmente).
+        // Si no está disponible, encolamos la operación para ejecutarla
+        // cuando el toolbox sea actualizado/creado.
+        const trySetCategory = () => {
+            const toolboxReady = this.workspace && this.workspace.toolbox_ &&
+                typeof this.workspace.toolbox_.setSelectedCategoryById === 'function';
+            if (toolboxReady) {
+                try {
+                    this.workspace.toolbox_.setSelectedCategoryById(categoryId);
+                } catch (e) {
+                    console.warn('[Blocks] Error al seleccionar categoría:', e);
+                }
+            } else {
+                // Si no está listo, encolamos la operación para cuando se actualice el toolbox
+                this.toolboxUpdateQueue.push(() => {
+                    const queuedToolboxReady = this.workspace && this.workspace.toolbox_ &&
+                        typeof this.workspace.toolbox_.setSelectedCategoryById === 'function';
+                    if (queuedToolboxReady) {
+                        try {
+                            this.workspace.toolbox_.setSelectedCategoryById(categoryId);
+                        } catch (e) {
+                            console.warn('[Blocks] Error al seleccionar categoría desde la cola:', e);
+                        }
+                    }
+                });
+                // Intentamos forzar una actualización del toolbox por si eso crea la estructura requerida
+                try {
+                    this.requestToolboxUpdate();
+                } catch (e) {
+                    // no crítico
+                }
+            }
+        };
+
+        this.withToolboxUpdates(trySetCategory);
     }
     setBlocks (blocks) {
         this.blocks = blocks;
@@ -672,6 +776,7 @@ Blocks.defaultOptions = {
         wheel: true,
         startScale: BLOCKS_DEFAULT_SCALE
     },
+    scrollbars: true,
     grid: {
         spacing: 40,
         length: 2,

@@ -49,7 +49,7 @@ class VisionActions {
             color3: '#134E4A',
             blocks: [
                 {
-                    opcode: 'visionactions_setImageURL',
+                    opcode: 'setImageURL',
                     blockType: BlockType.COMMAND,
                     text: 'cargar imagen desde URL [URL]',
                     arguments: {
@@ -60,22 +60,28 @@ class VisionActions {
                     }
                 },
                 {
-                    opcode: 'visionactions_setImageFile',
+                    opcode: 'setImageFile',
                     blockType: BlockType.COMMAND,
-                    text: 'cargar imagen desde archivo local'
+                    text: 'cargar imagen desde archivo local [FILE]',
+                    arguments: {
+                        FILE: {
+                            type: ArgumentType.STRING,
+                            defaultValue: ''
+                        }
+                    }
                 },
                 {
-                    opcode: 'visionactions_show',
+                    opcode: 'show',
                     blockType: BlockType.COMMAND,
                     text: 'mostrar resultado'
                 },
                 {
-                    opcode: 'visionactions_exportProcessedImage',
+                    opcode: 'exportProcessedImage',
                     blockType: BlockType.COMMAND,
                     text: 'exportar imagen procesada'
                 },
                 {
-                    opcode: 'visionactions_exportPythonCode',
+                    opcode: 'exportPythonCode',
                     blockType: BlockType.COMMAND,
                     text: 'exportar código Python'
                 }
@@ -89,11 +95,11 @@ class VisionActions {
     // =========================================================
     getPrimitives () {
         return {
-            visionactions_setImageURL: this.setImageURL.bind(this),
-            visionactions_setImageFile: this.setImageFile.bind(this),
-            visionactions_show: this.show.bind(this),
-            visionactions_exportProcessedImage: this.exportProcessedImage.bind(this),
-            visionactions_exportPythonCode: this.exportPythonCode.bind(this)
+            setImageURL: this.setImageURL.bind(this),
+            setImageFile: this.setImageFile.bind(this),
+            show: this.show.bind(this),
+            exportProcessedImage: this.exportProcessedImage.bind(this),
+            exportPythonCode: this.exportPythonCode.bind(this)
         };
     }
 
@@ -161,6 +167,4 @@ class VisionActions {
 // =========================================================
 // ✅ EXPORTACIÓN FORMAL USADA POR SCRATCH VM
 // =========================================================
-module.exports = function (runtime) {
-    return new VisionActions(runtime);
-};
+module.exports = VisionActions;

@@ -19,7 +19,7 @@ class VisionBasic {
             color3: '#064E3B',
             blocks: [
                 {
-                    opcode: 'visionbasic_brightness',
+                    opcode: 'brightness',
                     blockType: BlockType.COMMAND,
                     text: 'ajustar brillo [BETA]',
                     arguments: {
@@ -30,7 +30,7 @@ class VisionBasic {
                     }
                 },
                 {
-                    opcode: 'visionbasic_contrast',
+                    opcode: 'contrast',
                     blockType: BlockType.COMMAND,
                     text: 'ajustar contraste [ALPHA]',
                     arguments: {
@@ -41,12 +41,12 @@ class VisionBasic {
                     }
                 },
                 {
-                    opcode: 'visionbasic_invert',
+                    opcode: 'invert',
                     blockType: BlockType.COMMAND,
                     text: 'invertir colores'
                 },
                 {
-                    opcode: 'visionbasic_pixelate',
+                    opcode: 'pixelate',
                     blockType: BlockType.COMMAND,
                     text: 'pixelar imagen [F]',
                     arguments: {
@@ -57,12 +57,12 @@ class VisionBasic {
                     }
                 },
                 {
-                    opcode: 'visionbasic_circles',
+                    opcode: 'circles',
                     blockType: BlockType.COMMAND,
                     text: 'detectar círculos'
                 },
                 {
-                    opcode: 'visionbasic_rectangles',
+                    opcode: 'rectangles',
                     blockType: BlockType.COMMAND,
                     text: 'detectar rectángulos'
                 }
@@ -76,12 +76,12 @@ class VisionBasic {
     // =========================================================
     getPrimitives () {
         return {
-            visionbasic_brightness: this.brightness.bind(this),
-            visionbasic_contrast: this.contrast.bind(this),
-            visionbasic_invert: this.invert.bind(this),
-            visionbasic_pixelate: this.pixelate.bind(this),
-            visionbasic_circles: this.circles.bind(this),
-            visionbasic_rectangles: this.rectangles.bind(this)
+            brightness: this.brightness.bind(this),
+            contrast: this.contrast.bind(this),
+            invert: this.invert.bind(this),
+            pixelate: this.pixelate.bind(this),
+            circles: this.circles.bind(this),
+            rectangles: this.rectangles.bind(this)
         };
     }
 
@@ -143,6 +143,4 @@ class VisionBasic {
 // =========================================================
 // ✅ EXPORTACIÓN FORMAL
 // =========================================================
-module.exports = function (runtime) {
-    return new VisionBasic(runtime);
-};
+module.exports = VisionBasic;

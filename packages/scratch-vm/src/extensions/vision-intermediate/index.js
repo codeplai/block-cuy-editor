@@ -19,39 +19,42 @@ class VisionIntermediate {
             color3: '#854D0E',
             blocks: [
                 {
-                    opcode: 'visionintermediate_edges',
+                    opcode: 'edges',
                     blockType: BlockType.COMMAND,
                     text: 'detectar bordes (Canny)'
                 },
                 {
-                    opcode: 'visionintermediate_gray',
+                    opcode: 'gray',
                     blockType: BlockType.COMMAND,
                     text: 'convertir a escala de grises'
                 },
                 {
-                    opcode: 'visionintermediate_gaussian',
+                    opcode: 'gaussian',
                     blockType: BlockType.COMMAND,
                     text: 'aplicar filtro gaussiano'
                 },
                 {
-                    opcode: 'visionintermediate_rotate',
+                    opcode: 'rotate',
                     blockType: BlockType.COMMAND,
-                    text: 'rotar imagen [ANGLE]',
+                    text: 'rotar imagen [ANGLE] grados',
                     arguments: {
-                        ANGLE: {type: ArgumentType.NUMBER, defaultValue: 90}
+                        ANGLE: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 90
+                        }
                     }
                 },
                 {
-                    opcode: 'visionintermediate_resize',
+                    opcode: 'resize',
                     blockType: BlockType.COMMAND,
-                    text: 'redimensionar a [W]x[H]',
+                    text: 'redimensionar a [W] × [H]',
                     arguments: {
                         W: {type: ArgumentType.NUMBER, defaultValue: 320},
                         H: {type: ArgumentType.NUMBER, defaultValue: 240}
                     }
                 }
             ],
-            menus: {} // requerido por el formato Scratch
+            menus: {}
         };
     }
 
@@ -60,11 +63,11 @@ class VisionIntermediate {
     // =========================================================
     getPrimitives () {
         return {
-            visionintermediate_edges: this.edges.bind(this),
-            visionintermediate_gray: this.gray.bind(this),
-            visionintermediate_gaussian: this.gaussian.bind(this),
-            visionintermediate_rotate: this.rotate.bind(this),
-            visionintermediate_resize: this.resize.bind(this)
+            edges: this.edges.bind(this),
+            gray: this.gray.bind(this),
+            gaussian: this.gaussian.bind(this),
+            rotate: this.rotate.bind(this),
+            resize: this.resize.bind(this)
         };
     }
 
@@ -122,6 +125,4 @@ class VisionIntermediate {
 // =========================================================
 // ✅ EXPORTACIÓN FORMAL PARA SCRATCH VM
 // =========================================================
-module.exports = function (runtime) {
-    return new VisionIntermediate(runtime);
-};
+module.exports = VisionIntermediate;
