@@ -20,8 +20,7 @@ import {
 } from '../reducers/modals';
 
 import {
-    activateTab,
-    SOUNDS_TAB_INDEX
+    activateTab
 } from '../reducers/editor-tab';
 
 import {setRestore} from '../reducers/restore-deletion';
@@ -375,7 +374,6 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-    onActivateSoundsTab: () => dispatch(activateTab(SOUNDS_TAB_INDEX)),
     onNewLibraryBackdropClick: () => {
         dispatch(openBackdropLibrary());
     },

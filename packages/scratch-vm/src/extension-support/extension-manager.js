@@ -25,7 +25,10 @@ const builtinExtensions = {
     makeymakey: () => require('../extensions/scratch3_makeymakey'),
     boost: () => require('../extensions/scratch3_boost'),
     gdxfor: () => require('../extensions/scratch3_gdx_for'),
-    vision: () => Vision
+    vision: () => Vision,
+    visionBasic: () => require('../extensions/scratch3_vision_basic/index'),
+    visionIntermediate: () => require('../extensions/scratch3_vision_intermediate/index'),
+    visionAdvanced: () => require('../extensions/scratch3_vision_advanced/index'),
 
 };
 

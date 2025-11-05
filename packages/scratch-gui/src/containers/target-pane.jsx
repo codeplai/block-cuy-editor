@@ -8,7 +8,7 @@ import {
     openSpriteLibrary,
     closeSpriteLibrary
 } from '../reducers/modals';
-import {activateTab, COSTUMES_TAB_INDEX, BLOCKS_TAB_INDEX} from '../reducers/editor-tab';
+import {activateTab, BLOCKS_TAB_INDEX} from '../reducers/editor-tab'; // ✅ ELIMINADO COSTUMES_TAB_INDEX
 import {setReceivedBlocks} from '../reducers/hovered-target';
 import {showStandardAlert, closeAlertWithId} from '../reducers/alerts';
 import {setRestore} from '../reducers/restore-deletion';
@@ -30,13 +30,6 @@ class TargetPane extends React.Component {
         bindAll(this, [
             'handleActivateBlocksTab',
             'handleBlockDragEnd',
-            'handleChangeSpriteRotationStyle',
-            'handleChangeSpriteDirection',
-            'handleChangeSpriteName',
-            'handleChangeSpriteSize',
-            'handleChangeSpriteVisibility',
-            'handleChangeSpriteX',
-            'handleChangeSpriteY',
             'handleDeleteSprite',
             'handleDrop',
             'handleDuplicateSprite',
@@ -57,27 +50,7 @@ class TargetPane extends React.Component {
     componentWillUnmount () {
         this.props.vm.removeListener('BLOCK_DRAG_END', this.handleBlockDragEnd);
     }
-    handleChangeSpriteDirection (direction) {
-        this.props.vm.postSpriteInfo({direction});
-    }
-    handleChangeSpriteRotationStyle (rotationStyle) {
-        this.props.vm.postSpriteInfo({rotationStyle});
-    }
-    handleChangeSpriteName (name) {
-        this.props.vm.renameSprite(this.props.editingTarget, name);
-    }
-    handleChangeSpriteSize (size) {
-        this.props.vm.postSpriteInfo({size});
-    }
-    handleChangeSpriteVisibility (visible) {
-        this.props.vm.postSpriteInfo({visible});
-    }
-    handleChangeSpriteX (x) {
-        this.props.vm.postSpriteInfo({x});
-    }
-    handleChangeSpriteY (y) {
-        this.props.vm.postSpriteInfo({y});
-    }
+    
     handleDeleteSprite (id) {
         const restoreSprite = this.props.vm.deleteSprite(id);
         const restoreFun = () => restoreSprite().then(this.handleActivateBlocksTab);
@@ -122,10 +95,9 @@ class TargetPane extends React.Component {
             formatMessage(sharedMessages.pop),
             formatMessage(sharedMessages.costume, {index: 1})
         );
+        // ✅ CAMBIADO: Ya no intentamos activar la pestaña de costumes, activamos blocks
         this.props.vm.addSprite(JSON.stringify(emptyItem)).then(() => {
-            setTimeout(() => { // Wait for targets update to propagate before tab switching
-                this.props.onActivateTab(COSTUMES_TAB_INDEX);
-            });
+            this.handleActivateBlocksTab();
         });
     }
     handleActivateBlocksTab () {
@@ -241,14 +213,14 @@ class TargetPane extends React.Component {
     render () {
         /* eslint-disable no-unused-vars */
         const {
-            dispatchUpdateRestore, // eslint-disable-line no-unused-vars
+            dispatchUpdateRestore,
             isRtl,
-            onActivateTab, // eslint-disable-line no-unused-vars
-            onCloseImporting, // eslint-disable-line no-unused-vars
-            onHighlightTarget, // eslint-disable-line no-unused-vars
-            onNewSpriteClick, // eslint-disable-line no-unused-vars
-            onReceivedBlocks, // eslint-disable-line no-unused-vars
-            onShowImporting, // eslint-disable-line no-unused-vars
+            onActivateTab,
+            onCloseImporting,
+            onHighlightTarget,
+            onNewSpriteClick,
+            onReceivedBlocks,
+            onShowImporting,
             workspaceMetrics,
             ...componentProps
         } = this.props;
@@ -258,13 +230,6 @@ class TargetPane extends React.Component {
                 {...componentProps}
                 fileInputRef={this.setFileInput}
                 onActivateBlocksTab={this.handleActivateBlocksTab}
-                onChangeSpriteDirection={this.handleChangeSpriteDirection}
-                onChangeSpriteName={this.handleChangeSpriteName}
-                onChangeSpriteRotationStyle={this.handleChangeSpriteRotationStyle}
-                onChangeSpriteSize={this.handleChangeSpriteSize}
-                onChangeSpriteVisibility={this.handleChangeSpriteVisibility}
-                onChangeSpriteX={this.handleChangeSpriteX}
-                onChangeSpriteY={this.handleChangeSpriteY}
                 onDeleteSprite={this.handleDeleteSprite}
                 onDrop={this.handleDrop}
                 onDuplicateSprite={this.handleDuplicateSprite}
@@ -281,8 +246,8 @@ class TargetPane extends React.Component {
 }
 
 const {
-    onSelectSprite, // eslint-disable-line no-unused-vars
-    onActivateBlocksTab, // eslint-disable-line no-unused-vars
+    onSelectSprite,
+    onActivateBlocksTab,
     ...targetPaneProps
 } = TargetPaneComponent.propTypes;
 

@@ -1,34 +1,45 @@
-import React from 'react';
-import {FormattedMessage} from 'react-intl';
-
-// 👁️ Nuevo icono para Vision Kit
-import visionIconURL from './vision/vision.png';
+import visionBasicIconURL from './vision_basic/vision-basic.png';
+import visionBasicInsetIconURL from './vision_basic/vision-basic-small.svg';
+import visionIntermediateIconURL from './vision_intermediate/vision-intermediate.png';
+import visionIntermediateInsetIconURL from './vision_intermediate/vision-intermediate-small.svg';
+import visionAdvancedIconURL from './vision_advanced/vision-advanced.png';
+import visionAdvancedInsetIconURL from './vision_advanced/vision-advanced-small.svg';
 
 export default [
-    {
-        name: 'Vision Kit',
-        extensionId: 'vision',
-        iconURL: visionIconURL,
-        insetIconURL: visionIconURL,
-        description: (
-            <FormattedMessage
-                defaultMessage="Filtros de color, bordes y visión por computadora."
-                description="Description for the Vision Kit extension"
-                id="gui.extension.vision.description"
-            />
-        ),
-        featured: true,
-
-        // 👇 NUEVO: metadatos visuales para dividir categorías dentro de Vision Kit
-        collaborator: 'OpenCV + Scratch EDU',
-        tags: ['visión', 'imagen', 'procesamiento'],
-
-        // 👇 NUEVO: definición de subcategorías (niveles)
-        categories: [
-            {name: '🧩 Acciones', color: '#2DD4BF'},
-            {name: '💡 Nivel Básico', color: '#34D399'},
-            {name: '⚙️ Nivel Intermedio', color: '#FACC15'},
-            {name: '🚀 Nivel Avanzado', color: '#A78BFA'}
-        ]
-    }
+{
+    name: 'Vision Kit Básico',
+    extensionId: 'visionBasic',
+    iconURL: visionBasicIconURL,
+    insetIconURL: visionBasicInsetIconURL,
+    description: 'Aprende procesamiento de imágenes con filtros y efectos básicos.',
+    featured: true,
+    disabled: false,
+    internetConnectionRequired: false,
+    bluetoothRequired: false,
+    tags: ['vision', 'basico', 'imagenes']
+},
+{
+    name: 'Vision Kit Intermedio',
+    extensionId: 'visionIntermediate',
+    iconURL: visionIntermediateIconURL,
+    insetIconURL: visionIntermediateInsetIconURL,
+    description: 'Detecta bordes, contornos y aplica transformaciones avanzadas.',
+    featured: true,
+    disabled: false,
+    internetConnectionRequired: false,
+    bluetoothRequired: false,
+    tags: ['vision', 'intermedio', 'bordes']
+},
+{
+    name: 'Vision Kit Avanzado',
+    extensionId: 'visionAdvanced',
+    iconURL: visionAdvancedIconURL,
+    insetIconURL: visionAdvancedInsetIconURL,
+    description: 'Características avanzadas, segmentación y machine learning.',
+    featured: true,
+    disabled: false,
+    internetConnectionRequired: false,
+    bluetoothRequired: false,
+    tags: ['vision', 'avanzado', 'ml']
+}
 ];

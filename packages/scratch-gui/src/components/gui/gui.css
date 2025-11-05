@@ -317,3 +317,55 @@ $fade-out-distance: 15px;
 :global(.ReactModal__Body--open) {
     overflow: hidden;
 }
+/* --- Aumentar tamaño del cuadro de vista previa (Escenario) con forma cuadrada --- */
+.stage-wrapper {
+    width: 520px !important;   /* Aumenta el ancho */
+    height: 520px !important;  /* Aumenta la altura */
+    max-width: none;
+    max-height: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #ffffff;
+    border-radius: 12px;
+    border: 2px solid #ccc;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 8px rgba(0,0,0,0.15);
+}
+
+.stage-canvas-wrapper {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.stage-header {
+    font-size: 1rem;
+    text-align: center;
+    padding: 0.5rem 0;
+}
+
+/* --- Ajuste del contenedor general para acomodar el nuevo tamaño --- */
+.stage-and-target-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-left: $space;
+    padding-right: $space;
+    flex-basis: auto;
+}
+
+/* --- Ajuste del panel de sprites (para evitar solapamiento) --- */
+.target-wrapper {
+    margin-top: 12px;
+    overflow-y: auto;
+}
+
+/* --- Compatibilidad en pantallas pequeñas --- */
+@media (max-width: 1200px) {
+    .stage-wrapper {
+        width: 620px !important;
+        height: 620px !important;
+    }
+}
+
+

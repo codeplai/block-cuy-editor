@@ -1,4 +1,5 @@
 import classNames from 'classnames';
+// ❌ ELIMINADO: import { safeStyles } from '../../lib/safe-styles';
 import omit from 'lodash.omit';
 import PropTypes from 'prop-types';
 import React, {useEffect, useCallback} from 'react';
@@ -11,9 +12,7 @@ import VM from '@scratch/scratch-vm';
 import Renderer from '@scratch/scratch-render';
 
 import Blocks from '../../containers/blocks.jsx';
-import CostumeTab from '../../containers/costume-tab.jsx';
 import TargetPane from '../../containers/target-pane.jsx';
-import SoundTab from '../../containers/sound-tab.jsx';
 import StageWrapper from '../../containers/stage-wrapper.jsx';
 import Loader from '../loader/loader.jsx';
 import Box from '../box/box.jsx';
@@ -22,7 +21,7 @@ import CostumeLibrary from '../../containers/costume-library.jsx';
 import BackdropLibrary from '../../containers/backdrop-library.jsx';
 import Watermark from '../../containers/watermark.jsx';
 
-import Backpack from '../../containers/backpack.jsx';
+// import Backpack from '../../containers/backpack.jsx'; // 👈 MODIFICADO: Mochila eliminada
 import WebGlModal from '../../containers/webgl-modal.jsx';
 import TipsLibrary from '../../containers/tips-library.jsx';
 import Cards from '../../containers/cards.jsx';
@@ -39,13 +38,14 @@ import {AccountMenuOptionsPropTypes} from '../../lib/account-menu-options';
 import styles from './gui.css';
 import addExtensionIcon from './icon--extensions.svg';
 import codeIcon from './icon--code.svg';
-import costumesIcon from './icon--costumes.svg';
-import soundsIcon from './icon--sounds.svg';
 import DebugModal from '../debug-modal/debug-modal.jsx';
 import {setPlatform} from '../../reducers/platform.js';
 import {PLATFORM} from '../../lib/platform.js';
-import VisionPreview from '../../containers/vision-preview.jsx';
+// import VisionPreview from '../../containers/vision-preview.jsx'; // 👈 MODIFICADO: Vista previa eliminada
 
+// ✅ Si safe-styles no existe, usamos los estilos directamente
+const safeGuiStyles = styles;
+const safeTabStyles = tabStyles;
 
 const messages = defineMessages({
     addExtension: {
@@ -145,7 +145,8 @@ const GUIComponent = props => {
         hideTutorialProjects,
         vm,
         ...componentProps
-    } = omit(props, 'dispatch', 'setPlatform');
+    } = omit(props, 'dispatch', 'setPlatform', 'localesOnly');
+    
     if (children) {
         return <Box {...componentProps}>{children}</Box>;
     }
@@ -157,12 +158,12 @@ const GUIComponent = props => {
     }, [props.platform]);
 
     const tabClassNames = {
-        tabs: styles.tabs,
-        tab: classNames(tabStyles.reactTabsTab, styles.tab),
-        tabList: classNames(tabStyles.reactTabsTabList, styles.tabList),
-        tabPanel: classNames(tabStyles.reactTabsTabPanel, styles.tabPanel),
-        tabPanelSelected: classNames(tabStyles.reactTabsTabPanelSelected, styles.isSelected),
-        tabSelected: classNames(tabStyles.reactTabsTabSelected, styles.isSelected)
+        tabs: safeGuiStyles.tabs,
+        tab: classNames(safeTabStyles.reactTabsTab, safeGuiStyles.tab),
+        tabList: classNames(safeTabStyles.reactTabsTabList, safeGuiStyles.tabList),
+        tabPanel: classNames(safeTabStyles.reactTabsTabPanel, safeGuiStyles.tabPanel),
+        tabPanelSelected: classNames(safeTabStyles.reactTabsTabPanelSelected, safeGuiStyles.isSelected),
+        tabSelected: classNames(safeTabStyles.reactTabsTabSelected, safeGuiStyles.isSelected)
     };
 
     const onCloseDebugModal = useCallback(() => {
@@ -194,12 +195,12 @@ const GUIComponent = props => {
                 vm={vm}
             >
                 {alertsVisible ? (
-                    <Alerts className={styles.alertsContainer} />
+                    <Alerts className={safeGuiStyles.alertsContainer} />
                 ) : null}
             </StageWrapper>
         ) : (
             <Box
-                className={styles.pageWrapper}
+                className={safeGuiStyles.pageWrapper}
                 dir={isRtl ? 'rtl' : 'ltr'}
                 {...componentProps}
             >
@@ -233,7 +234,7 @@ const GUIComponent = props => {
                     <Cards />
                 ) : null}
                 {alertsVisible ? (
-                    <Alerts className={styles.alertsContainer} />
+                    <Alerts className={safeGuiStyles.alertsContainer} />
                 ) : null}
                 {connectionModalVisible ? (
                     <ConnectionModal
@@ -271,7 +272,7 @@ const GUIComponent = props => {
                     canRemix={canRemix}
                     canSave={canSave}
                     canShare={canShare}
-                    className={styles.menuBarPosition}
+                    className={safeGuiStyles.menuBarPosition}
                     enableCommunity={enableCommunity}
                     isShared={isShared}
                     isTotallyNormal={isTotallyNormal}
@@ -293,114 +294,72 @@ const GUIComponent = props => {
                     username={username}
                     accountMenuOptions={accountMenuOptions}
                 />
-                <Box className={styles.bodyWrapper}>
-                    <Box className={styles.flexWrapper}>
-                        <Box className={styles.editorWrapper}>
-                            <Tabs
-                                forceRenderTabPanel
-                                className={tabClassNames.tabs}
-                                selectedIndex={activeTabIndex}
-                                selectedTabClassName={tabClassNames.tabSelected}
-                                selectedTabPanelClassName={tabClassNames.tabPanelSelected}
-                                onSelect={onActivateTab}
-                            >
-                                <TabList className={tabClassNames.tabList}>
-                                    <Tab className={tabClassNames.tab}>
-                                        <img
-                                            draggable={false}
-                                            src={codeIcon}
-                                        />
-                                        <FormattedMessage
-                                            defaultMessage="Code"
-                                            description="Button to get to the code panel"
-                                            id="gui.gui.codeTab"
-                                        />
-                                    </Tab>
-                                    <Tab
-                                        className={tabClassNames.tab}
-                                        onClick={onActivateCostumesTab}
-                                    >
-                                        <img
-                                            draggable={false}
-                                            src={costumesIcon}
-                                        />
-                                        {targetIsStage ? (
-                                            <FormattedMessage
-                                                defaultMessage="Backdrops"
-                                                description="Button to get to the backdrops panel"
-                                                id="gui.gui.backdropsTab"
-                                            />
-                                        ) : (
-                                            <FormattedMessage
-                                                defaultMessage="Costumes"
-                                                description="Button to get to the costumes panel"
-                                                id="gui.gui.costumesTab"
-                                            />
-                                        )}
-                                    </Tab>
-                                    <Tab
-                                        className={tabClassNames.tab}
-                                        onClick={onActivateSoundsTab}
-                                    >
-                                        <img
-                                            draggable={false}
-                                            src={soundsIcon}
-                                        />
-                                        <FormattedMessage
-                                            defaultMessage="Sounds"
-                                            description="Button to get to the sounds panel"
-                                            id="gui.gui.soundsTab"
-                                        />
-                                    </Tab>
-                                </TabList>
-                                <TabPanel className={tabClassNames.tabPanel}>
-                                    <Box className={styles.blocksWrapper}>
-                                        <Blocks
-                                            key={`${blocksId}/${theme}`}
-                                            canUseCloud={canUseCloud}
-                                            grow={1}
-                                            isVisible={blocksTabVisible}
-                                            options={{
-                                                media: `${basePath}static/${themeMap[theme].blocksMediaFolder}/`
-                                            }}
-                                            stageSize={stageSize}
-                                            theme={theme}
-                                            vm={vm}
-                                        />
-                                    </Box>
-                                    <Box className={styles.extensionButtonContainer}>
-                                        <button
-                                            className={styles.extensionButton}
-                                            title={intl.formatMessage(messages.addExtension)}
-                                            onClick={onExtensionButtonClick}
-                                        >
-                                            <img
-                                                className={styles.extensionButtonIcon}
-                                                draggable={false}
-                                                src={addExtensionIcon}
-                                            />
-                                        </button>
-                                    </Box>
-                                    <Box className={styles.watermark}>
-                                        <Watermark />
-                                    </Box>
-                                </TabPanel>
-                                <TabPanel className={tabClassNames.tabPanel}>
-                                    {costumesTabVisible ? <CostumeTab
-                                        vm={vm}
-                                        onNewLibraryBackdropClick={onNewLibraryBackdropClick}
-                                        onNewLibraryCostumeClick={onNewLibraryCostumeClick}
-                                    /> : null}
-                                </TabPanel>
-                                <TabPanel className={tabClassNames.tabPanel}>
-                                    {soundsTabVisible ? <SoundTab vm={vm} /> : null}
-                                </TabPanel>
-                            </Tabs>
+                <Box className={safeGuiStyles.bodyWrapper}>
+                    <Box className={safeGuiStyles.flexWrapper}>
+                        <Box className={safeGuiStyles.editorWrapper}>
+                    <Tabs
+                        forceRenderTabPanel
+                        className={tabClassNames.tabs}
+                        selectedIndex={activeTabIndex}
+                        selectedTabClassName={tabClassNames.tabSelected}
+                        selectedTabPanelClassName={tabClassNames.tabPanelSelected}
+                        onSelect={onActivateTab}
+                    >
+                        <TabList className={tabClassNames.tabList}>
+                            <Tab className={tabClassNames.tab}>
+                                <img
+                                    draggable={false}
+                                    src={codeIcon}
+                                />
+                                <FormattedMessage
+                                    defaultMessage="Code"
+                                    description="Button to get to the code panel"
+                                    id="gui.gui.codeTab"
+                                />
+                            </Tab>
+                        </TabList>
+                        <TabPanel className={tabClassNames.tabPanel}>
+                            <Box className={safeGuiStyles.blocksWrapper}>
+                                <Blocks
+                                    key={`${blocksId}/${theme}`}
+                                    canUseCloud={canUseCloud}
+                                    grow={1}
+                                    isVisible={blocksTabVisible}
+                                    options={{
+                                        media: `${basePath}static/${themeMap[theme].blocksMediaFolder}/`
+                                    }}
+                                    stageSize={stageSize}
+                                    theme={theme}
+                                    vm={vm}
+                                />
+                            </Box>
+                            <Box className={safeGuiStyles.extensionButtonContainer}>
+                                <button
+                                    className={safeGuiStyles.extensionButton}
+                                    title={intl.formatMessage(messages.addExtension)}
+                                    onClick={onExtensionButtonClick}
+                                >
+                                    <img
+                                        className={safeGuiStyles.extensionButtonIcon}
+                                        draggable={false}
+                                        src={addExtensionIcon}
+                                    />
+                                </button>
+                            </Box>
+                            <Box className={safeGuiStyles.watermark}>
+                                <Watermark />
+                            </Box>
+                        </TabPanel>
+                    </Tabs>
+
+
+                            {/* 👈 MODIFICADO: Mochila eliminada
                             {backpackVisible ? (
                                 <Backpack host={backpackHost} />
                             ) : null}
+                            */}
                         </Box>
-                        <Box className={classNames(styles.stageAndTargetWrapper, styles[stageSize])}>
+                        <Box className={classNames(safeGuiStyles.stageAndTargetWrapper, safeGuiStyles[stageSize])}>
                             <StageWrapper
                                 isFullScreen={isFullScreen}
                                 isRendererSupported={isRendererSupported}
@@ -408,7 +367,7 @@ const GUIComponent = props => {
                                 stageSize={stageSize}
                                 vm={vm}
                             />
-                            <Box className={styles.targetWrapper}>
+                            <Box className={safeGuiStyles.targetWrapper}>
                                 <TargetPane
                                     stageSize={stageSize}
                                     vm={vm}
@@ -416,7 +375,9 @@ const GUIComponent = props => {
                                     onNewBackdropClick={onNewLibraryBackdropClick}
                                 />
                             </Box>
+                            {/* 👈 MODIFICADO: Vista previa eliminada
                             <VisionPreview vm={vm} />
+                            */}
                         </Box>
                     </Box>
                 </Box>
@@ -430,9 +391,9 @@ GUIComponent.propTypes = {
     accountNavOpen: PropTypes.bool,
     accountMenuOptions: AccountMenuOptionsPropTypes,
     activeTabIndex: PropTypes.number,
-    authorId: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]), // can be false
+    authorId: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
     authorThumbnailUrl: PropTypes.string,
-    authorUsername: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]), // can be false
+    authorUsername: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
     backdropLibraryVisible: PropTypes.bool,
     backpackHost: PropTypes.string,
     backpackVisible: PropTypes.bool,
@@ -465,6 +426,7 @@ GUIComponent.propTypes = {
     isShared: PropTypes.bool,
     isTotallyNormal: PropTypes.bool,
     loading: PropTypes.bool,
+
     logo: PropTypes.string,
     manuallySaveThumbnails: PropTypes.bool,
     onActivateCostumesTab: PropTypes.func,
@@ -502,7 +464,7 @@ GUIComponent.propTypes = {
     telemetryModalVisible: PropTypes.bool,
     theme: PropTypes.string,
     tipsLibraryVisible: PropTypes.bool,
-    useExternalPeripheralList: PropTypes.bool, // true for CDM, false for normal Scratch Link
+    useExternalPeripheralList: PropTypes.bool,
     username: PropTypes.string,
     userOwnsProject: PropTypes.bool,
     hideTutorialProjects: PropTypes.bool,
@@ -535,7 +497,6 @@ GUIComponent.defaultProps = {
 };
 
 const mapStateToProps = state => ({
-    // This is the button's mode, as opposed to the actual current state
     blocksId: state.scratchGui.timeTravel.year.toString(),
     stageSizeMode: state.scratchGui.stageSize.stageSize,
     theme: state.scratchGui.theme.theme

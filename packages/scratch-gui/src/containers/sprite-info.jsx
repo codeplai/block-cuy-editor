@@ -1,3 +1,5 @@
+
+//src/containers/sprite-info.jsx
 import bindAll from 'lodash.bindall';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -35,6 +37,7 @@ SpriteInfo.propTypes = {
     ...SpriteInfoComponent.propTypes,
     onChangeDirection: PropTypes.func,
     onChangeName: PropTypes.func,
+    onChangeRotationStyle: PropTypes.func, // ✅ AGREGADO
     onChangeSize: PropTypes.func,
     onChangeVisibility: PropTypes.func,
     onChangeX: PropTypes.func,
