@@ -439,7 +439,7 @@ class MenuBar extends React.Component {
             >
                 <div className={styles.mainMenu}>
                     <div className={styles.fileGroup}>
-                        <div className={classNames(styles.menuBarItem)}>
+                        {/* <div className={classNames(styles.menuBarItem)}>
                             <img
                                 id="logo_img"
                                 alt="Scratch"
@@ -450,7 +450,7 @@ class MenuBar extends React.Component {
                                 src={getScratchLogo(this.props.platform)}
                                 onClick={this.props.onClickLogo}
                             />
-                        </div>
+                        </div> */}
                         {this.props.isTotallyNormal && (
                             <div
                                 className={classNames(styles.menuBarItem, styles.hoverable, {

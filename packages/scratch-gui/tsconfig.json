@@ -23,6 +23,7 @@
 
     /* 🔧 Completeness */
     "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
 
     /* 🧩 Clave para resolver @scratch/scratch-vm */
     "baseUrl": "./src",
