@@ -31,8 +31,7 @@ import {updateMetrics} from '../reducers/workspace-metrics';
 import {isTimeTravel2020} from '../reducers/time-travel';
 
 import {
-    activateTab,
-    SOUNDS_TAB_INDEX
+    activateTab
 } from '../reducers/editor-tab';
 
 const addFunctionListener = (object, property, callback) => {
@@ -816,7 +815,6 @@ const mapDispatchToProps = dispatch => ({
         dispatch(openConnectionModal());
     },
     onOpenSoundRecorder: () => {
-        dispatch(activateTab(SOUNDS_TAB_INDEX));
         dispatch(openSoundRecorder());
     },
     onRequestCloseExtensionLibrary: () => {

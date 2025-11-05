@@ -451,136 +451,6 @@ class MenuBar extends React.Component {
                                 onClick={this.props.onClickLogo}
                             />
                         </div>
-                        {(this.props.canChangeTheme || this.props.canChangeLanguage) && (<SettingsMenu
-                            canChangeLanguage={this.props.canChangeLanguage}
-                            canChangeTheme={this.props.canChangeTheme}
-                            isRtl={this.props.isRtl}
-                            onRequestClose={this.props.onRequestCloseSettings}
-                            onRequestOpen={this.props.onClickSettings}
-                            settingsMenuOpen={this.props.settingsMenuOpen}
-                        />)}
-                        {(this.props.canManageFiles) && (
-                            <div
-                                className={classNames(styles.menuBarItem, styles.hoverable, {
-                                    [styles.active]: this.props.fileMenuOpen
-                                })}
-                                onMouseUp={this.props.onClickFile}
-                            >
-                                <img src={fileIcon} />
-                                <span className={styles.collapsibleLabel}>
-                                    <FormattedMessage
-                                        defaultMessage="File"
-                                        description="Text for file dropdown menu"
-                                        id="gui.menuBar.file"
-                                    />
-                                </span>
-                                <img src={dropdownCaret} />
-                                <MenuBarMenu
-                                    className={classNames(styles.menuBarMenu)}
-                                    open={this.props.fileMenuOpen}
-                                    place={this.props.isRtl ? 'left' : 'right'}
-                                    onRequestClose={this.props.onRequestCloseFile}
-                                >
-                                    <MenuSection>
-                                        <MenuItem
-                                            isRtl={this.props.isRtl}
-                                            onClick={this.handleClickNew}
-                                        >
-                                            {newProjectMessage}
-                                        </MenuItem>
-                                    </MenuSection>
-                                    {(this.props.canSave || this.props.canCreateCopy || this.props.canRemix) && (
-                                        <MenuSection>
-                                            {this.props.canSave && (
-                                                <MenuItem onClick={this.handleClickSave}>
-                                                    {saveNowMessage}
-                                                </MenuItem>
-                                            )}
-                                            {this.props.canCreateCopy && (
-                                                <MenuItem onClick={this.handleClickSaveAsCopy}>
-                                                    {createCopyMessage}
-                                                </MenuItem>
-                                            )}
-                                            {this.props.canRemix && (
-                                                <MenuItem onClick={this.handleClickRemix}>
-                                                    {remixMessage}
-                                                </MenuItem>
-                                            )}
-                                        </MenuSection>
-                                    )}
-                                    <MenuSection>
-                                        <MenuItem
-                                            onClick={this.props.onStartSelectingFileUpload}
-                                        >
-                                            {this.props.intl.formatMessage(sharedMessages.loadFromComputerTitle)}
-                                        </MenuItem>
-                                        <SB3Downloader>{(className, downloadProjectCallback) => (
-                                            <MenuItem
-                                                className={className}
-                                                onClick={this.getSaveToComputerHandler(downloadProjectCallback)}
-                                            >
-                                                <FormattedMessage
-                                                    defaultMessage="Save to your computer"
-                                                    description="Menu bar item for downloading a project to your computer" // eslint-disable-line max-len
-                                                    id="gui.menuBar.downloadToComputer"
-                                                />
-                                            </MenuItem>
-                                        )}</SB3Downloader>
-                                    </MenuSection>
-                                </MenuBarMenu>
-                            </div>
-                        )}
-                        <div
-                            className={classNames(styles.menuBarItem, styles.hoverable, {
-                                [styles.active]: this.props.editMenuOpen
-                            })}
-                            onMouseUp={this.props.onClickEdit}
-                        >
-                            <img src={editIcon} />
-                            <span className={styles.collapsibleLabel}>
-                                <FormattedMessage
-                                    defaultMessage="Edit"
-                                    description="Text for edit dropdown menu"
-                                    id="gui.menuBar.edit"
-                                />
-                            </span>
-                            <img src={dropdownCaret} />
-                            <MenuBarMenu
-                                className={classNames(styles.menuBarMenu)}
-                                open={this.props.editMenuOpen}
-                                place={this.props.isRtl ? 'left' : 'right'}
-                                onRequestClose={this.props.onRequestCloseEdit}
-                            >
-                                <DeletionRestorer>{(handleRestore, {restorable, deletedItem}) => (
-                                    <MenuItem
-                                        className={classNames({[styles.disabled]: !restorable})}
-                                        onClick={this.handleRestoreOption(handleRestore)}
-                                    >
-                                        {this.restoreOptionMessage(deletedItem)}
-                                    </MenuItem>
-                                )}</DeletionRestorer>
-                                <MenuSection>
-                                    <TurboMode>{(toggleTurboMode, {turboMode}) => (
-                                        <MenuItem onClick={toggleTurboMode}>
-                                            {turboMode ? (
-                                                <FormattedMessage
-                                                    defaultMessage="Turn off Turbo Mode"
-                                                    description="Menu bar item for turning off turbo mode"
-                                                    id="gui.menuBar.turboModeOff"
-                                                />
-                                            ) : (
-                                                <FormattedMessage
-                                                    defaultMessage="Turn on Turbo Mode"
-                                                    description="Menu bar item for turning on turbo mode"
-                                                    id="gui.menuBar.turboModeOn"
-                                                />
-                                            )}
-                                        </MenuItem>
-                                    )}</TurboMode>
-                                </MenuSection>
-                            </MenuBarMenu>
-
-                        </div>
                         {this.props.isTotallyNormal && (
                             <div
                                 className={classNames(styles.menuBarItem, styles.hoverable, {
@@ -629,27 +499,8 @@ class MenuBar extends React.Component {
                             </div>
                         )}
                     </div>
-                    {this.props.canEditTitle ? (
-                        <div className={classNames(styles.menuBarItem, styles.growable)}>
-                            <MenuBarItemTooltip
-                                enable
-                                id="title-field"
-                            >
-                                <ProjectTitleInput
-                                    className={classNames(styles.titleFieldGrowable)}
-                                />
-                            </MenuBarItemTooltip>
-                        </div>
-                    ) : ((this.props.authorUsername && this.props.authorUsername !== this.props.username) ? (
-                        <AuthorInfo
-                            className={styles.authorInfo}
-                            imageUrl={this.props.authorThumbnailUrl}
-                            projectTitle={this.props.projectTitle}
-                            userId={this.props.authorId}
-                            username={this.props.authorUsername}
-                        />
-                    ) : null)}
-                    <div className={classNames(styles.menuBarItem)}>
+                    {/* ❌ ELIMINADO: Botón Compartir y Ver página del proyecto */}
+                    {/* <div className={classNames(styles.menuBarItem)}>
                         {this.props.canShare ? (
                             (this.props.isShowingProject || this.props.isUpdating) && (
                                 <ProjectWatcher onDoneUpdating={this.props.onSeeCommunity}>
@@ -658,11 +509,9 @@ class MenuBar extends React.Component {
                                             <ShareButton
                                                 className={styles.menuBarButton}
                                                 isShared={this.props.isShared}
-                                                /* eslint-disable react/jsx-no-bind */
                                                 onClick={() => {
                                                     this.handleClickShare(waitForUpdate);
                                                 }}
-                                                /* eslint-enable react/jsx-no-bind */
                                             />
                                         )
                                     }
@@ -685,11 +534,9 @@ class MenuBar extends React.Component {
                                         waitForUpdate => (
                                             <CommunityButton
                                                 className={styles.menuBarButton}
-                                                /* eslint-disable react/jsx-no-bind */
                                                 onClick={() => {
                                                     this.handleClickSeeCommunity(waitForUpdate);
                                                 }}
-                                                /* eslint-enable react/jsx-no-bind */
                                             />
                                         )
                                     }
@@ -700,38 +547,7 @@ class MenuBar extends React.Component {
                                 <CommunityButton className={styles.menuBarButton} />
                             </MenuBarItemTooltip>
                         ) : [])}
-                    </div>
-                    <Divider className={classNames(styles.divider)} />
-                    <div className={styles.fileGroup}>
-                        <div
-                            aria-label={this.props.intl.formatMessage(ariaMessages.tutorials)}
-                            className={
-                                classNames(styles.menuBarItem, styles.noOffset, styles.hoverable, 'tutorials-button')
-                            }
-                            onClick={this.props.onOpenTipLibrary}
-                        >
-                            <img
-                                className={styles.helpIcon}
-                                src={helpIcon}
-                            />
-                            <span className={styles.tutorialsLabel}>
-                                <FormattedMessage {...ariaMessages.tutorials} />
-                            </span>
-                        </div>
-                        <div
-                            aria-label={this.props.intl.formatMessage(ariaMessages.debug)}
-                            className={classNames(styles.menuBarItem, styles.noOffset, styles.hoverable)}
-                            onClick={this.props.onOpenDebugModal}
-                        >
-                            <img
-                                className={styles.helpIcon}
-                                src={debugIcon}
-                            />
-                            <span className={styles.debugLabel}>
-                                <FormattedMessage {...ariaMessages.debug} />
-                            </span>
-                        </div>
-                    </div>
+                    </div> */}
                 </div>
 
                 {/* show the proper UI in the account menu, given whether the user is
@@ -743,9 +559,9 @@ class MenuBar extends React.Component {
                         )}
                     </div>
 
-                    {menuOpts.canHaveSession ? (
+                    {/* ❌ ELIMINADO: Todo el bloque de AccountNav y menús de usuario */}
+                    {/* {menuOpts.canHaveSession ? (
                         this.props.username ? (
-                            // ************ user is logged in ************
                             <React.Fragment>
                                 {menuOpts.myStuffUrl ? (
                                     <a href={menuOpts.myStuffUrl}>
@@ -791,8 +607,6 @@ class MenuBar extends React.Component {
                                 />
                             </React.Fragment>
                         ) : (
-                            // ********* user not logged in, but a session exists
-                            // ********* so they can choose to log in
                             <React.Fragment>
                                 {menuOpts.canRegister ? (
                                     <div
@@ -837,7 +651,6 @@ class MenuBar extends React.Component {
                             </React.Fragment>
                         )
                     ) : (
-                        // ******** no login session is available, so don't show login stuff
                         <React.Fragment>
                             {this.props.showComingSoon ? (
                                 <React.Fragment>
@@ -882,7 +695,7 @@ class MenuBar extends React.Component {
                                 </React.Fragment>
                             ) : []}
                         </React.Fragment>
-                    )}
+                    )} */}
                 </div>
 
                 {aboutButton}

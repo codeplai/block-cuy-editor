@@ -22,14 +22,6 @@ const TargetPane = ({
     hoveredTarget,
     spriteLibraryVisible,
     onActivateBlocksTab,
-    onChangeSpriteDirection,
-    onChangeSpriteName,
-    onChangeSpriteRotationStyle,
-    onChangeSpriteSize,
-    onChangeSpriteVisibility,
-
-    onChangeSpriteX,
-    onChangeSpriteY,
     onDeleteSprite,
     onDrop,
     onDuplicateSprite,
@@ -53,8 +45,8 @@ const TargetPane = ({
         className={styles.targetPane}
         {...componentProps}
     >
-
-        <SpriteSelectorComponent
+        {/* ❌ ELIMINADO: SpriteSelectorComponent (lista de sprites con el gato) */}
+        {/* <SpriteSelectorComponent
             editingTarget={editingTarget}
             hoveredTarget={hoveredTarget}
             raised={raiseSprites}
@@ -62,13 +54,6 @@ const TargetPane = ({
             spriteFileInput={fileInputRef}
             sprites={sprites}
             stageSize={stageSize}
-            onChangeSpriteDirection={onChangeSpriteDirection}
-            onChangeSpriteName={onChangeSpriteName}
-            onChangeSpriteRotationStyle={onChangeSpriteRotationStyle}
-            onChangeSpriteSize={onChangeSpriteSize}
-            onChangeSpriteVisibility={onChangeSpriteVisibility}
-            onChangeSpriteX={onChangeSpriteX}
-            onChangeSpriteY={onChangeSpriteY}
             onDeleteSprite={onDeleteSprite}
             onDrop={onDrop}
             onDuplicateSprite={onDuplicateSprite}
@@ -79,8 +64,10 @@ const TargetPane = ({
             onSelectSprite={onSelectSprite}
             onSpriteUpload={onSpriteUpload}
             onSurpriseSpriteClick={onSurpriseSpriteClick}
-        />
-        <div className={styles.stageSelectorWrapper}>
+        /> */}
+        
+        {/* ❌ ELIMINADO: StageSelector (Escenario y Fondos) */}
+        {/* <div className={styles.stageSelectorWrapper}>
             {stage.id && <StageSelector
                 asset={
                     stage.costume &&
@@ -101,6 +88,51 @@ const TargetPane = ({
                     />
                 ) : null}
             </div>
+        </div> */}
+        
+        {/* Mantener funcionalidad oculta para no romper el código */}
+        <div style={{display: 'none'}}>
+            <SpriteSelectorComponent
+                editingTarget={editingTarget}
+                hoveredTarget={hoveredTarget}
+                raised={raiseSprites}
+                selectedId={editingTarget}
+                spriteFileInput={fileInputRef}
+                sprites={sprites}
+                stageSize={stageSize}
+                onDeleteSprite={onDeleteSprite}
+                onDrop={onDrop}
+                onDuplicateSprite={onDuplicateSprite}
+                onExportSprite={onExportSprite}
+                onFileUploadClick={onFileUploadClick}
+                onNewSpriteClick={onNewSpriteClick}
+                onPaintSpriteClick={onPaintSpriteClick}
+                onSelectSprite={onSelectSprite}
+                onSpriteUpload={onSpriteUpload}
+                onSurpriseSpriteClick={onSurpriseSpriteClick}
+            />
+            <div className={styles.stageSelectorWrapper}>
+                {stage.id && <StageSelector
+                    asset={
+                        stage.costume &&
+                        stage.costume.asset
+                    }
+                    backdropCount={stage.costumeCount}
+                    id={stage.id}
+                    selected={stage.id === editingTarget}
+                    onSelect={onSelectSprite}
+                    onNewBackdropClick={onNewBackdropClick}
+                />}
+                <div>
+                    {spriteLibraryVisible ? (
+                        <SpriteLibrary
+                            vm={vm}
+                            onActivateBlocksTab={onActivateBlocksTab}
+                            onRequestClose={onRequestCloseSpriteLibrary}
+                        />
+                    ) : null}
+                </div>
+            </div>
         </div>
     </div>
 );
@@ -110,8 +142,6 @@ const spriteShape = PropTypes.shape({
         url: PropTypes.string,
         name: PropTypes.string.isRequired,
         asset: PropTypes.instanceOf(legacyConfig.storage.scratchStorage.Asset),
-        // The following are optional because costumes uploaded from disk
-        // will not have these properties available
         bitmapResolution: PropTypes.number,
         rotationCenterX: PropTypes.number,
         rotationCenterY: PropTypes.number
@@ -136,13 +166,6 @@ TargetPane.propTypes = {
         receivedBlocks: PropTypes.bool
     }),
     onActivateBlocksTab: PropTypes.func.isRequired,
-    onChangeSpriteDirection: PropTypes.func,
-    onChangeSpriteName: PropTypes.func,
-    onChangeSpriteRotationStyle: PropTypes.func,
-    onChangeSpriteSize: PropTypes.func,
-    onChangeSpriteVisibility: PropTypes.func,
-    onChangeSpriteX: PropTypes.func,
-    onChangeSpriteY: PropTypes.func,
     onDeleteSprite: PropTypes.func,
     onDrop: PropTypes.func,
     onDuplicateSprite: PropTypes.func,
